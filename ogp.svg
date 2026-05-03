@@ -1,0 +1,30 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>麻雀AIトレーニング OGPサムネイル</title>
+<rect width="1200" height="630" fill="#1a1a2e"/>
+<circle cx="1060" cy="106" r="212" fill="#0f3460" opacity="0.5"/>
+<circle cx="141" cy="529" r="141" fill="#0f3460" opacity="0.4"/>
+<g transform="translate(203, 168)">
+  <rect width="99" height="134" rx="12" fill="#e8dcc0" stroke="#c8b89a" stroke-width="2.5"/>
+  <text x="49" y="92" text-anchor="middle" font-size="46" font-family="serif" fill="#222">東</text>
+</g>
+<g transform="translate(323, 168)">
+  <rect width="99" height="134" rx="12" fill="#e8dcc0" stroke="#c8b89a" stroke-width="2.5"/>
+  <text x="49" y="92" text-anchor="middle" font-size="46" font-family="serif" fill="#222">南</text>
+</g>
+<g transform="translate(443, 168)">
+  <rect width="99" height="134" rx="12" fill="#e8dcc0" stroke="#c8b89a" stroke-width="2.5"/>
+  <text x="49" y="92" text-anchor="middle" font-size="46" font-family="serif" fill="#222">西</text>
+</g>
+<g transform="translate(563, 168)">
+  <rect width="99" height="134" rx="12" fill="#e8dcc0" stroke="#c8b89a" stroke-width="2.5"/>
+  <text x="49" y="92" text-anchor="middle" font-size="46" font-family="serif" fill="#222">北</text>
+</g>
+<g transform="translate(683, 168)">
+  <rect width="99" height="134" rx="12" fill="#e8dcc0" stroke="#c8b89a" stroke-width="2.5"/>
+  <text x="49" y="92" text-anchor="middle" font-size="46" font-family="serif" fill="#c00">中</text>
+</g>
+<text x="600" y="406" text-anchor="middle" font-size="82" font-weight="700" font-family="sans-serif" fill="#ffffff" letter-spacing="4">麻雀AIトレーニング</text>
+<text x="600" y="480" text-anchor="middle" font-size="32" font-family="sans-serif" fill="#a0b4cc" letter-spacing="2">AIと一緒に打牌を練習しよう</text>
+<rect x="406" y="518" width="388" height="60" rx="30" fill="#4a90d9" opacity="0.9"/>
+<text x="600" y="556" text-anchor="middle" font-size="26" font-family="sans-serif" fill="#ffffff" letter-spacing="2">無料 · ブラウザで今すぐ遊べる</text>
+</svg>
