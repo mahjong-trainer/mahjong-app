@@ -118,6 +118,7 @@ body{font-family:Arial;text-align:center;}
 
 <div class="action-bar">
   <button class="action-btn" onclick="generateRandomHand()">🎲 ランダム配牌</button>
+  <button class="action-btn" style="background:#fce4ec;border-color:#e91e63;color:#880e4f;font-weight:bold;" onclick="generateHardHand()">🔥 難問配牌</button>
   <button class="action-btn blue" onclick="resetHand()">✏️ 手牌を入力し直す</button>
   <button class="action-btn yellow" id="btnRandomTsumo" style="display:none;" onclick="drawRandomTsumo()">🀫 ランダムにツモる</button>
   <button class="action-btn green" id="btnSelectTsumo" style="display:none;" onclick="toggleTsumoSelect()">🖐 自分でツモ牌を選ぶ</button>
@@ -770,6 +771,86 @@ function selectDiscard(selectedTile){
 // ===================================================
 // ランダム配牌
 // ===================================================
+function generateHardHand(){
+    kitaNukiCount=0;tsumoTile=null;nakiMentsu=[];history=null;tsumoSelectMode=false;
+    document.getElementById("tsumoSelectArea").style.display='none';
+    document.getElementById("nakiSelectArea").style.display='none';
+    const baList=['東','南'];const jiList=gameMode==='3'?['東','南','西']:['東','南','西','北'];
+    setBaKaze(baList[Math.floor(Math.random()*baList.length)]);
+    setJiKaze(jiList[Math.floor(Math.random()*jiList.length)]);
+    Object.keys(situation).forEach(k=>situation[k]=false);
+    const ids={riichi:'btnRiichi',driichi:'btnDriichi',tsumo:'btnTsumo',haitei:'btnHaitei',rinshan:'btnRinshan',chankan:'btnChankan',tenchi:'btnTenchi'};
+    Object.keys(ids).forEach(k=>document.getElementById(ids[k]).classList.remove('active'));
+
+    // 清一色or混一色の手牌を生成
+    const suits=["萬","筒","索"];
+    const mainSuit=suits[Math.floor(Math.random()*suits.length)];
+
+    // 混一色か清一色かをランダムに決定（50%ずつ）
+    const isChinitsu=Math.random()<0.5;
+
+    let bestHand=null;
+    let bestScore=-1;
+
+    for(let attempt=0;attempt<100;attempt++){
+        const wall=buildWall();
+        wall.sort(()=>Math.random()-0.5);
+
+        // メインスーツの牌を優先的に選ぶ
+        let suitTiles=wall.filter(t=>{
+            const s=getSuit(t);
+            return s===mainSuit||isRedTile(t)&&getSuit(t)===mainSuit;
+        });
+        let honorTiles=wall.filter(t=>isHonorTile(t));
+
+        let candidate;
+        if(isChinitsu){
+            // 清一色：メインスーツのみ13枚
+            if(suitTiles.length<13) continue;
+            candidate=sortHand(suitTiles.slice(0,13));
+        } else {
+            // 混一色：メインスーツ＋字牌で13枚（字牌2〜4枚程度）
+            const honorCount=Math.floor(Math.random()*3)+2; // 2〜4枚
+            if(suitTiles.length<13-honorCount||honorTiles.length<honorCount) continue;
+            candidate=sortHand([...suitTiles.slice(0,13-honorCount),...honorTiles.slice(0,honorCount)]);
+        }
+
+        const counts=handToCounts(candidate);
+        const shanten=calculateShanten(counts);
+
+        // 1〜3シャンテンを対象（清一色・混一色は難しいので少し広め）
+        if(shanten<1||shanten>3) continue;
+
+        const ukeire=countUkeire(candidate);
+        const score=ukeire+(3-shanten)*50;
+
+        if(score>bestScore){
+            bestScore=score;
+            bestHand=candidate;
+        }
+        if(bestHand&&shanten<=2) break;
+    }
+
+    if(!bestHand){
+        // フォールバック：通常ランダム
+        const wall=buildWall();wall.sort(()=>Math.random()-0.5);
+        bestHand=sortHand(wall.slice(0,13));
+    }
+
+    hand=bestHand;
+
+    // ドラ表示牌をメインスーツから設定
+    const doraNum=Math.floor(Math.random()*8)+1;
+    const randomDora=doraNum+mainSuit;
+    doraIndicator=randomDora;
+    const doraVal=getDoraFromIndicator(randomDora);
+    document.getElementById("doraDisplay").innerText=randomDora+(doraVal?"（ドラ："+doraVal+"）":"");
+    document.querySelectorAll("#doraTiles .tile").forEach(t=>t.classList.remove("selected"));
+
+    setResult("");renderHand();renderNaki();updateActionButtons();
+    const btn=document.getElementById("kitaNukiBtn");if(btn)btn.innerText="北を抜く（+0枚）";
+}
+
 function generateRandomHand(){
     kitaNukiCount=0;tsumoTile=null;nakiMentsu=[];history=null;tsumoSelectMode=false;
     document.getElementById("tsumoSelectArea").style.display='none';
@@ -781,9 +862,16 @@ function generateRandomHand(){
     const ids={riichi:'btnRiichi',driichi:'btnDriichi',tsumo:'btnTsumo',haitei:'btnHaitei',rinshan:'btnRinshan',chankan:'btnChankan',tenchi:'btnTenchi'};
     Object.keys(ids).forEach(k=>document.getElementById(ids[k]).classList.remove('active'));
 
-    // ドラ表示牌をランダムに設定
-    const doraPool=getAvailableTiles().filter(t=>!isRedTile(t));
-    const randomDora=doraPool[Math.floor(Math.random()*doraPool.length)];
+    // 手牌で一番多いスーツを調べてからドラ表示牌を設定（手牌生成前なので仮配牌で判定）
+    // まず仮の手牌を作ってスーツを調べる
+    const tempWall=buildWall();tempWall.sort(()=>Math.random()-0.5);
+    const tempHand=tempWall.slice(0,13);
+    const suitCount={"萬":0,"筒":0,"索":0};
+    tempHand.forEach(t=>{const s=getSuit(t);if(s)suitCount[s]++;});
+    const mainSuit=Object.entries(suitCount).sort((a,b)=>b[1]-a[1])[0][0];
+    // メインスーツの牌からドラ表示牌を選ぶ（1〜8にするとドラが2〜9になり手牌に絡みやすい）
+    const doraNum=Math.floor(Math.random()*8)+1;
+    const randomDora=doraNum+mainSuit;
     doraIndicator=randomDora;
     const doraVal=getDoraFromIndicator(randomDora);
     document.getElementById("doraDisplay").innerText=randomDora+(doraVal?"（ドラ："+doraVal+"）":"");
