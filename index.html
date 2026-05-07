@@ -353,13 +353,16 @@ function selectNakiTile(name){
     const allHandUsed=[...hand,...nakiMentsu.flatMap(m=>m.tiles)];
     let finalTiles=[...tiles];
 
+    // 5が含まれるスーツを1回だけ確認（同じスーツに複数の5がある場合でも1回）
+    const askedSuits=new Set();
     for(let i=0;i<finalTiles.length;i++){
         const t=finalTiles[i];
         const suit=getSuit(t);
-        if(getNum(t)===5&&suit){
+        if(getNum(t)===5&&suit&&!askedSuits.has(suit)){
+            askedSuits.add(suit);
             const redName=fivesSuits[suit];
             if(!allHandUsed.includes(redName)){
-                const useRed=confirm(t+"(5)はRedDora("+redName+")ですか? OK=赤ドラ Cancel=通常");
+                const useRed=confirm(t+"は赤ドラ("+redName+")ですか? OK=赤ドラ Cancel=通常の5");
                 if(useRed) finalTiles[i]=redName;
             }
         }
