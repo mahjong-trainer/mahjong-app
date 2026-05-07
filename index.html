@@ -780,8 +780,55 @@ function generateRandomHand(){
     Object.keys(situation).forEach(k=>situation[k]=false);
     const ids={riichi:'btnRiichi',driichi:'btnDriichi',tsumo:'btnTsumo',haitei:'btnHaitei',rinshan:'btnRinshan',chankan:'btnChankan',tenchi:'btnTenchi'};
     Object.keys(ids).forEach(k=>document.getElementById(ids[k]).classList.remove('active'));
-    const wall=buildWall();wall.sort(()=>Math.random()-0.5);
-    hand=sortHand(wall.slice(0,13));
+
+    // ドラ表示牌をランダムに設定
+    const doraPool=getAvailableTiles().filter(t=>!isRedTile(t));
+    const randomDora=doraPool[Math.floor(Math.random()*doraPool.length)];
+    doraIndicator=randomDora;
+    const doraVal=getDoraFromIndicator(randomDora);
+    document.getElementById("doraDisplay").innerText=randomDora+(doraVal?"（ドラ："+doraVal+"）":"");
+    document.querySelectorAll("#doraTiles .tile").forEach(t=>t.classList.remove("selected"));
+
+    // 1〜2シャンテン、かつドラ1枚以上を含む手牌を最大50回試行して生成
+    const dora=getDoraFromIndicator(doraIndicator);
+    let bestHand=null;
+    let bestScore=-1;
+
+    for(let attempt=0;attempt<50;attempt++){
+        const wall=buildWall();
+        wall.sort(()=>Math.random()-0.5);
+        const candidate=sortHand(wall.slice(0,13));
+        const counts=handToCounts(candidate);
+        const shanten=calculateShanten(counts);
+
+        // シャンテン数が1〜2の手牌のみ対象
+        if(shanten<1||shanten>2) continue;
+
+        // ドラの枚数をカウント
+        const doraCount=dora?candidate.filter(t=>normalizeTile(t)===dora).length:0;
+        const redCount=candidate.filter(t=>isRedTile(t)).length;
+        const totalDora=doraCount+redCount;
+
+        // スコア計算：ドラが多いほど優先、同シャンテンなら受け入れ枚数が多い方を優先
+        const ukeire=countUkeire(candidate);
+        const score=totalDora*100+ukeire;
+
+        if(score>bestScore){
+            bestScore=score;
+            bestHand=candidate;
+        }
+
+        // ドラが1枚以上あれば早期終了（十分な手牌が見つかった）
+        if(totalDora>=1&&shanten>=1&&shanten<=2) break;
+    }
+
+    // 条件に合う手牌が見つからなかった場合は通常のランダム配牌
+    if(!bestHand){
+        const wall=buildWall();wall.sort(()=>Math.random()-0.5);
+        bestHand=sortHand(wall.slice(0,13));
+    }
+
+    hand=bestHand;
     setResult("");renderHand();renderNaki();updateActionButtons();
     const btn=document.getElementById("kitaNukiBtn");if(btn)btn.innerText="北を抜く（+0枚）";
 }
