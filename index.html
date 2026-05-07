@@ -123,6 +123,7 @@ body{font-family:Arial;text-align:center;}
   <button class="action-btn green" id="btnSelectTsumo" style="display:none;" onclick="toggleTsumoSelect()">🖐 自分でツモ牌を選ぶ</button>
   <button class="action-btn gray" id="btnUndo" style="display:none;" onclick="undoDiscard()">↩️ 1手戻る</button>
   <button class="action-btn" onclick="analyze()">🔍 解析する</button>
+  <button class="action-btn" id="btnSaveImage" style="display:none;background:#f3e5f5;border-color:#9c27b0;" onclick="saveQuestionImage()">📸 問題を画像保存</button>
 </div>
 
 <div id="tsumoSelectArea">
@@ -791,8 +792,121 @@ function setResult(txt){
     el.innerHTML='<pre style="white-space:pre-wrap;text-align:left;display:inline-block;max-width:720px;">'+txt+'</pre>';
 }
 
+// ===================================================
+// 管理者モード
+// ===================================================
+function initAdminMode(){
+    const params=new URLSearchParams(window.location.search);
+    if(params.get('admin')==='Manuku0629'){
+        document.getElementById('btnSaveImage').style.display='inline-block';
+    }
+}
+
+// ===================================================
+// 問題を画像として保存
+// ===================================================
+function saveQuestionImage(){
+    // html2canvasを使って手牌エリアをキャプチャ
+    const target=document.getElementById('hand');
+    if(!tsumoTile&&hand.length===0){alert('手牌を選んでください');return;}
+
+    // Canvas要素を作成して手牌を描画
+    const tileSize=52;const tileH=72;const margin=6;
+    const allTiles=tsumoTile?[...hand,null,tsumoTile]:[...hand];
+    const cols=allTiles.filter(t=>t!==null).length;
+    const canvas=document.createElement('canvas');
+    const extraW=tsumoTile?tileSize+margin*2:0;
+    canvas.width=cols*(tileSize+margin)+margin+extraW;
+    canvas.height=tileH+margin*2+60;
+    const ctx=canvas.getContext('2d');
+
+    // 背景
+    ctx.fillStyle='#1a1a2e';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // タイトル
+    ctx.fillStyle='#ffffff';
+    ctx.font='bold 16px Arial';
+    ctx.textAlign='center';
+    const today=new Date();
+    const dateStr=today.getFullYear()+'/'+(today.getMonth()+1)+'/'+today.getDate();
+    ctx.fillText('麻雀AIトレーニング - 今日の問題 '+dateStr, canvas.width/2, 20);
+    ctx.fillStyle='#a0b4cc';
+    ctx.font='13px Arial';
+    ctx.fillText('場風:'+baKaze+' 自風:'+jiKaze+' / mahjong-trainer.github.io/mahjong-app/', canvas.width/2, 38);
+
+    // 牌を描画
+    let x=margin;
+    const y=48;
+    const promises=[];
+
+    hand.forEach((tile,i)=>{
+        const imgEl=new Image();
+        imgEl.src=getTileImage(tile);
+        const captureX=x;
+        promises.push(new Promise(resolve=>{
+            imgEl.onload=()=>{
+                ctx.fillStyle='#e8dcc0';
+                ctx.strokeStyle='#333';
+                ctx.lineWidth=2;
+                roundRect(ctx,captureX,y,tileSize,tileH,6);
+                ctx.drawImage(imgEl,captureX,y,tileSize,tileH);
+                resolve();
+            };
+            imgEl.onerror=()=>{
+                ctx.fillStyle='#e8dcc0';
+                roundRect(ctx,captureX,y,tileSize,tileH,6);
+                ctx.fillStyle='#333';ctx.font='bold 14px Arial';ctx.textAlign='center';
+                ctx.fillText(tile,captureX+tileSize/2,y+tileH/2+5);
+                resolve();
+            };
+        }));
+        x+=tileSize+margin;
+    });
+
+    // ツモ牌（少し右にずらして黄色背景）
+    if(tsumoTile){
+        x+=margin;
+        const captureX=x;
+        const imgEl=new Image();
+        imgEl.src=getTileImage(tsumoTile);
+        promises.push(new Promise(resolve=>{
+            imgEl.onload=()=>{
+                ctx.fillStyle='#fffacd';
+                ctx.strokeStyle='#e6b800';
+                ctx.lineWidth=2;
+                roundRect(ctx,captureX,y-4,tileSize,tileH,6);
+                ctx.drawImage(imgEl,captureX,y-4,tileSize,tileH);
+                resolve();
+            };
+            imgEl.onerror=()=>{
+                ctx.fillStyle='#fffacd';
+                roundRect(ctx,captureX,y-4,tileSize,tileH,6);
+                ctx.fillStyle='#333';ctx.font='bold 14px Arial';ctx.textAlign='center';
+                ctx.fillText(tsumoTile,captureX+tileSize/2,y+tileH/2+1);
+                resolve();
+            };
+        }));
+    }
+
+    Promise.all(promises).then(()=>{
+        const link=document.createElement('a');
+        link.download='mahjong_'+dateStr.replace(/\//g,'')+'.png';
+        link.href=canvas.toDataURL('image/png');
+        link.click();
+    });
+}
+
+function roundRect(ctx,x,y,w,h,r){
+    ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
+    ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();ctx.fill();ctx.stroke();
+}
+
 createTiles();
 createDoraTiles();
+initAdminMode();
 </script>
 </body>
 </html>
