@@ -318,17 +318,20 @@ function selectNakiTile(name){
     const def=NAKI_DEF[nakiMode];
     let tiles;
     if(nakiMode==='chi'){
-        // 順子として登録（代表牌から3枚連続）
         const n=getNum(name),s=getSuit(name);
         if(!n||!s){cancelNaki();return;}
         tiles=[n+s,(n+1)+s,(n+2)+s];
-        // 範囲チェック
         if(n>7){alert('その牌からは順子を作れません');return;}
     } else {
-        // 刻子・カン
         const count=def.tileCount;
         tiles=Array(count).fill(normalizeTile(name));
     }
+    // 枚数チェック：手牌＋既存鳴き面子＋今回の鳴き牌が4枚以内か確認
+    const allUsed=[...hand,...nakiMentsu.flatMap(m=>m.tiles),...tiles];
+    const countMap={};
+    allUsed.forEach(t=>{const n=normalizeTile(t);countMap[n]=(countMap[n]||0)+1;});
+    const over=Object.entries(countMap).find(([k,v])=>v>4);
+    if(over){alert(over[0]+'が合計'+over[1]+'枚になります。4枚を超えるため登録できません。');return;}
     nakiMentsu.push({type:nakiMode,tiles});
     document.getElementById("nakiSelectArea").style.display='none';
     nakiSelected=[];
@@ -365,8 +368,15 @@ function renderNaki(){
 function addTile(tile){
     const max=handMax();
     if(hand.length>=max)return;
-    if(isRedTile(tile)&&hand.includes(tile))return;
-    if(hand.filter(t=>normalizeTile(t)===normalizeTile(tile)).length>=4)return;
+    // 赤ドラは手牌+鳴き面子合わせて1枚まで
+    if(isRedTile(tile)){
+        const allTiles=[...hand,...nakiMentsu.flatMap(m=>m.tiles)];
+        if(allTiles.includes(tile))return;
+    }
+    // 通常牌は手牌+鳴き面子合わせて4枚まで
+    const norm=normalizeTile(tile);
+    const allNorm=[...hand,...nakiMentsu.flatMap(m=>m.tiles)].map(t=>normalizeTile(t));
+    if(allNorm.filter(t=>t===norm).length>=4)return;
     hand.push(tile);hand=sortHand(hand);renderHand();updateActionButtons();
 }
 function removeTile(tile){const idx=hand.lastIndexOf(tile);if(idx!==-1){hand.splice(idx,1);renderHand();updateActionButtons();}}
