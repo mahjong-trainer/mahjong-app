@@ -41,12 +41,26 @@ body{font-family:Arial;text-align:center;}
 #naki-area{margin:10px 0;min-height:20px;}
 .naki-mentsu{display:inline-flex;align-items:center;background:#fff3e0;border:2px solid #ffb74d;border-radius:8px;padding:4px 8px;margin:4px;cursor:pointer;}
 .naki-mentsu:hover{background:#ffe0b2;}
-.naki-btn{padding:5px 14px;font-size:13px;font-weight:bold;border:2px solid #ffb74d;border-radius:16px;cursor:pointer;background:#fff3e0;margin:4px;}
+.naki-bar{margin:8px 0;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;align-items:center;}
+.naki-btn{padding:5px 14px;font-size:13px;font-weight:bold;border:2px solid #ffb74d;border-radius:16px;cursor:pointer;background:#fff3e0;}
 .naki-btn:hover{background:#ffe0b2;}
+.naki-btn.ankan{border-color:#9c27b0;background:#f3e5f5;}
+.naki-btn.ankan:hover{background:#e1bee7;}
+.naki-btn.daiminkan{border-color:#f44336;background:#ffebee;}
+.naki-btn.daiminkan:hover{background:#ffcdd2;}
+.naki-btn.kakaon{border-color:#4caf50;background:#e8f5e9;}
+.naki-btn.kakaon:hover{background:#c8e6c9;}
 #nakiSelectArea{display:none;margin:8px 0;background:#fff8f0;border:2px solid #ffb74d;border-radius:10px;padding:10px;}
+.naki-type-label{display:inline-block;font-size:11px;font-weight:bold;padding:2px 6px;border-radius:8px;margin-left:4px;color:white;}
+.label-chi{background:#ff9800;}
+.label-pon{background:#2196f3;}
+.label-ankan{background:#9c27b0;}
+.label-daiminkan{background:#f44336;}
+.label-kakaon{background:#4caf50;}
 </style>
 </head>
 <body>
+
 <div class="mode-bar">
   <button class="mode-btn active" id="btn4" onclick="setGameMode('4')">四人麻雀</button>
   <button class="mode-btn" id="btn3" onclick="setGameMode('3')">三人麻雀</button>
@@ -55,6 +69,7 @@ body{font-family:Arial;text-align:center;}
     <button class="mode-btn" id="btnKitaNuki" onclick="setKitaMode('nuki')">北：抜きドラ</button>
   </span>
 </div>
+
 <div class="situation-bar">
   <span class="sit-label">場風：</span>
   <button class="sit-btn active" id="baEast" onclick="setBaKaze('東')">東</button>
@@ -76,22 +91,31 @@ body{font-family:Arial;text-align:center;}
   <button class="sit-btn" id="btnChankan" onclick="toggleSit('chankan')">槍槓</button>
   <button class="sit-btn" id="btnTenchi" onclick="toggleSit('tenchi')">天和/地和</button>
 </div>
+
 <h2 id="appTitle">手牌を13枚選んでください</h2>
 <div id="tiles"></div>
+
+<!-- 鳴きエリア -->
 <div id="naki-area"></div>
-<div class="situation-bar">
+<div class="naki-bar">
+  <span style="font-size:13px;font-weight:bold;">鳴き：</span>
   <button class="naki-btn" onclick="openNakiSelect('chi')">チー</button>
   <button class="naki-btn" onclick="openNakiSelect('pon')">ポン</button>
-  <button class="naki-btn" onclick="openNakiSelect('kan')">カン</button>
-  <button class="naki-btn" style="border-color:#e57373;background:#fdecea;" onclick="clearNaki()">鳴きをリセット</button>
+  <button class="naki-btn ankan" onclick="openNakiSelect('ankan')">アンカン</button>
+  <button class="naki-btn daiminkan" onclick="openNakiSelect('daiminkan')">ダイミンカン</button>
+  <button class="naki-btn kakaon" onclick="openNakiSelect('kakaon')">カカン</button>
+  <button class="naki-btn" style="border-color:#e57373;background:#fdecea;" onclick="clearNaki()">リセット</button>
 </div>
 <div id="nakiSelectArea">
-  <div id="nakiInstruction" style="font-size:13px;color:#555;margin-bottom:6px;"></div>
+  <div id="nakiInstruction" style="font-size:13px;color:#333;margin-bottom:6px;font-weight:bold;"></div>
+  <div id="nakiSubInstruction" style="font-size:12px;color:#666;margin-bottom:8px;"></div>
   <div id="nakiGrid"></div>
-  <button onclick="cancelNaki()" style="margin-top:6px;padding:4px 12px;font-size:13px;cursor:pointer;">キャンセル</button>
+  <button onclick="cancelNaki()" style="margin-top:8px;padding:4px 14px;font-size:13px;cursor:pointer;">キャンセル</button>
 </div>
+
 <h3>選択中の手牌（<span id="count">0</span>/<span id="maxTiles">13</span>）<span id="tsumoLabel" style="display:none;color:#b8860b;"> + ツモ牌</span></h3>
 <div id="hand"></div>
+
 <div class="action-bar">
   <button class="action-btn" onclick="generateRandomHand()">🎲 ランダム配牌</button>
   <button class="action-btn blue" onclick="resetHand()">✏️ 手牌を入力し直す</button>
@@ -100,41 +124,117 @@ body{font-family:Arial;text-align:center;}
   <button class="action-btn gray" id="btnUndo" style="display:none;" onclick="undoDiscard()">↩️ 1手戻る</button>
   <button class="action-btn" onclick="analyze()">🔍 解析する</button>
 </div>
+
 <div id="tsumoSelectArea">
   <p style="font-size:13px;color:#555;">ツモ牌にしたい牌を1枚クリックしてください</p>
   <div id="tsumoGrid"></div>
 </div>
+
 <h3>ドラ表示牌を選んでください</h3>
 <div id="doraTiles"></div>
 <h3>選択中のドラ表示牌：<span id="doraDisplay">未選択</span></h3>
 <div id="result"></div>
+
 <script>
+// ===================================================
+// グローバル状態
+// ===================================================
 let gameMode='4',kitaMode='yaku',baKaze='東',jiKaze='東';
 let situation={riichi:false,driichi:false,tsumo:false,haitei:false,rinshan:false,chankan:false,tenchi:false};
 let hand=[],tsumoTile=null,doraIndicator=null;
 let total=0,correct=0,kitaNukiCount=0,tsumoSelectMode=false;
+
+// nakiMentsu: [{type:'chi'|'pon'|'ankan'|'daiminkan'|'kakaon', tiles:[...], menzen:bool}]
 let nakiMentsu=[],history=null,nakiMode=null,nakiSelected=[];
+
 const honors=["東","南","西","北","白","發","中"];
 const windOrder=["東","南","西","北"];
 const dragonOrder=["白","發","中"];
 const RED_TILES=["5赤萬","5赤筒","5赤索"];
 
-function setGameMode(m){gameMode=m;hand=[];tsumoTile=null;doraIndicator=null;kitaNukiCount=0;tsumoSelectMode=false;nakiMentsu=[];history=null;document.getElementById("doraDisplay").innerText="未選択";setResult("");document.getElementById("btn4").classList.toggle("active",m==='4');document.getElementById("btn3").classList.toggle("active",m==='3');document.getElementById("kitaToggleWrap").style.display=m==='3'?'inline-flex':'none';document.getElementById("jiNorth").style.display=m==='3'?'none':'inline-block';if(m==='3'&&jiKaze==='北')setJiKaze('東');createTiles();createDoraTiles();renderHand();renderNaki();updateActionButtons();}
-function setKitaMode(m){kitaMode=m;hand=[];tsumoTile=null;tsumoSelectMode=false;nakiMentsu=[];history=null;setResult("");document.getElementById("btnKitaYaku").classList.toggle("active",m==='yaku');document.getElementById("btnKitaNuki").classList.toggle("active",m==='nuki');createTiles();createDoraTiles();renderHand();renderNaki();updateActionButtons();}
+// 鳴き種類の定義
+const NAKI_DEF={
+  chi:     {label:'チー',      cls:'label-chi',      menzen:false, tileCount:3, isKan:false},
+  pon:     {label:'ポン',      cls:'label-pon',      menzen:false, tileCount:3, isKan:false},
+  ankan:   {label:'アンカン',  cls:'label-ankan',    menzen:true,  tileCount:4, isKan:true},
+  daiminkan:{label:'ダイミンカン',cls:'label-daiminkan',menzen:false,tileCount:4,isKan:true},
+  kakaon:  {label:'カカン',    cls:'label-kakaon',   menzen:false, tileCount:4, isKan:true},
+};
+
+// ===================================================
+// モード設定
+// ===================================================
+function setGameMode(m){
+    gameMode=m;hand=[];tsumoTile=null;doraIndicator=null;kitaNukiCount=0;tsumoSelectMode=false;nakiMentsu=[];history=null;
+    document.getElementById("doraDisplay").innerText="未選択";
+    setResult("");
+    document.getElementById("btn4").classList.toggle("active",m==='4');
+    document.getElementById("btn3").classList.toggle("active",m==='3');
+    document.getElementById("kitaToggleWrap").style.display=m==='3'?'inline-flex':'none';
+    document.getElementById("jiNorth").style.display=m==='3'?'none':'inline-block';
+    if(m==='3'&&jiKaze==='北')setJiKaze('東');
+    createTiles();createDoraTiles();renderHand();renderNaki();updateActionButtons();
+}
+function setKitaMode(m){
+    kitaMode=m;hand=[];tsumoTile=null;tsumoSelectMode=false;nakiMentsu=[];history=null;
+    setResult("");
+    document.getElementById("btnKitaYaku").classList.toggle("active",m==='yaku');
+    document.getElementById("btnKitaNuki").classList.toggle("active",m==='nuki');
+    createTiles();createDoraTiles();renderHand();renderNaki();updateActionButtons();
+}
 function setBaKaze(k){baKaze=k;document.getElementById('baEast').classList.toggle('active',k==='東');document.getElementById('baSouth').classList.toggle('active',k==='南');}
 function setJiKaze(k){jiKaze=k;const ids={'東':'jiEast','南':'jiSouth','西':'jiWest','北':'jiNorth'};Object.entries(ids).forEach(([w,id])=>document.getElementById(id).classList.toggle('active',w===k));}
-function toggleSit(key){if(key==='riichi'&&situation.driichi)situation.driichi=false;if(key==='driichi'&&situation.riichi)situation.riichi=false;situation[key]=!situation[key];const ids={riichi:'btnRiichi',driichi:'btnDriichi',tsumo:'btnTsumo',haitei:'btnHaitei',rinshan:'btnRinshan',chankan:'btnChankan',tenchi:'btnTenchi'};Object.keys(ids).forEach(k=>document.getElementById(ids[k]).classList.toggle('active',situation[k]));}
-function handMax(){return 13-nakiMentsu.filter(m=>m.type!=='kan').length*3-nakiMentsu.filter(m=>m.type==='kan').length*4+nakiMentsu.reduce((s,m)=>s+(m.type==='kan'?4:3),0)-nakiMentsu.reduce((s,m)=>s+(m.type==='kan'?4:3),0)+13-nakiMentsu.length*3;}
-function handMax(){return Math.max(1,13-nakiMentsu.length*3);}
-function fullHandMax(){return handMax()+1;}
-function updateActionButtons(){const has13=hand.length===handMax(),hasTsumo=tsumoTile!==null;document.getElementById("btnRandomTsumo").style.display=(has13&&!hasTsumo)?'inline-block':'none';document.getElementById("btnSelectTsumo").style.display=(has13&&!hasTsumo)?'inline-block':'none';document.getElementById("btnUndo").style.display=history?'inline-block':'none';if(!has13||hasTsumo){document.getElementById("tsumoSelectArea").style.display='none';tsumoSelectMode=false;}document.getElementById("maxTiles").innerText=handMax();}
+function toggleSit(key){
+    if(key==='riichi'&&situation.driichi)situation.driichi=false;
+    if(key==='driichi'&&situation.riichi)situation.riichi=false;
+    situation[key]=!situation[key];
+    const ids={riichi:'btnRiichi',driichi:'btnDriichi',tsumo:'btnTsumo',haitei:'btnHaitei',rinshan:'btnRinshan',chankan:'btnChankan',tenchi:'btnTenchi'};
+    Object.keys(ids).forEach(k=>document.getElementById(ids[k]).classList.toggle('active',situation[k]));
+}
 
+// 現在の鳴き状況から手牌の最大枚数を計算
+function handMax(){
+    // 基本13枚、鳴くたびに3枚減（カンは4枚だが嶺上牌が増えるので実質3枚）
+    return Math.max(1, 13 - nakiMentsu.length * 3);
+}
+function fullHandMax(){return handMax()+1;}
+
+// 門前かどうか
+function isMenzen(){
+    return nakiMentsu.every(m=>NAKI_DEF[m.type].menzen);
+}
+
+function updateActionButtons(){
+    const has13=hand.length===handMax(),hasTsumo=tsumoTile!==null;
+    document.getElementById("btnRandomTsumo").style.display=(has13&&!hasTsumo)?'inline-block':'none';
+    document.getElementById("btnSelectTsumo").style.display=(has13&&!hasTsumo)?'inline-block':'none';
+    document.getElementById("btnUndo").style.display=history?'inline-block':'none';
+    if(!has13||hasTsumo){document.getElementById("tsumoSelectArea").style.display='none';tsumoSelectMode=false;}
+    document.getElementById("maxTiles").innerText=handMax();
+}
+
+// ===================================================
+// 牌ユーティリティ
+// ===================================================
 function normalizeTile(t){if(t==="5赤萬")return"5萬";if(t==="5赤筒")return"5筒";if(t==="5赤索")return"5索";return t;}
 function isRedTile(t){return RED_TILES.includes(t);}
 function tileToIndex(t){const n=normalizeTile(t);if(n.includes("萬"))return Number(n[0])-1;if(n.includes("筒"))return 9+Number(n[0])-1;if(n.includes("索"))return 18+Number(n[0])-1;return 27+honors.indexOf(n);}
 function indexToTile(i){if(i<9)return(i+1)+"萬";if(i<18)return(i-8)+"筒";if(i<27)return(i-17)+"索";return honors[i-27];}
-function getTileImage(name){if(name==="5赤萬")return"tiles/Man5-Dora.png";if(name==="5赤筒")return"tiles/Pin5-Dora.png";if(name==="5赤索")return"tiles/Sou5-Dora.png";if(name.includes("萬"))return"tiles/Man"+name[0]+".png";if(name.includes("筒"))return"tiles/Pin"+name[0]+".png";if(name.includes("索"))return"tiles/Sou"+name[0]+".png";const map={"東":"Ton.png","南":"Nan.png","西":"Shaa.png","北":"Pei.png","白":"Haku.png","發":"Hatsu.png","中":"Chun.png"};return"tiles/"+map[name];}
-function getDoraFromIndicator(ind){if(!ind)return null;const i=normalizeTile(ind);if(i.includes("萬")){let n=Number(i[0]);return(n===9?"1":(n+1))+"萬";}if(i.includes("筒")){let n=Number(i[0]);return(n===9?"1":(n+1))+"筒";}if(i.includes("索")){let n=Number(i[0]);return(n===9?"1":(n+1))+"索";}if(gameMode==='3'){const w=["東","南","西"];if(w.includes(i))return w[(w.indexOf(i)+1)%3];}else{if(windOrder.includes(i))return windOrder[(windOrder.indexOf(i)+1)%4];}if(dragonOrder.includes(i))return dragonOrder[(dragonOrder.indexOf(i)+1)%3];return null;}
+function getTileImage(name){
+    if(name==="5赤萬")return"tiles/Man5-Dora.png";if(name==="5赤筒")return"tiles/Pin5-Dora.png";if(name==="5赤索")return"tiles/Sou5-Dora.png";
+    if(name.includes("萬"))return"tiles/Man"+name[0]+".png";if(name.includes("筒"))return"tiles/Pin"+name[0]+".png";if(name.includes("索"))return"tiles/Sou"+name[0]+".png";
+    const map={"東":"Ton.png","南":"Nan.png","西":"Shaa.png","北":"Pei.png","白":"Haku.png","發":"Hatsu.png","中":"Chun.png"};return"tiles/"+map[name];
+}
+function getDoraFromIndicator(ind){
+    if(!ind)return null;const i=normalizeTile(ind);
+    if(i.includes("萬")){let n=Number(i[0]);return(n===9?"1":(n+1))+"萬";}
+    if(i.includes("筒")){let n=Number(i[0]);return(n===9?"1":(n+1))+"筒";}
+    if(i.includes("索")){let n=Number(i[0]);return(n===9?"1":(n+1))+"索";}
+    if(gameMode==='3'){const w=["東","南","西"];if(w.includes(i))return w[(w.indexOf(i)+1)%3];}
+    else{if(windOrder.includes(i))return windOrder[(windOrder.indexOf(i)+1)%4];}
+    if(dragonOrder.includes(i))return dragonOrder[(dragonOrder.indexOf(i)+1)%3];
+    return null;
+}
 function tileOrder(t){const n=normalizeTile(t);let base=0,num=0;if(n.includes("萬")){base=0;num=Number(n[0]);}else if(n.includes("筒")){base=100;num=Number(n[0]);}else if(n.includes("索")){base=200;num=Number(n[0]);}else{base=300;num=honors.indexOf(n);}return base+num-(isRedTile(t)?0.5:0);}
 function sortHand(h){return[...h].sort((a,b)=>tileOrder(a)-tileOrder(b));}
 function isYaochuTile(t){const n=normalizeTile(t);if(honors.includes(n))return true;const num=Number(n[0]);return num===1||num===9;}
@@ -143,63 +243,505 @@ function isSuited(t){const n=normalizeTile(t);return n.includes("萬")||n.includ
 function getSuit(t){const n=normalizeTile(t);if(n.includes("萬"))return"萬";if(n.includes("筒"))return"筒";if(n.includes("索"))return"索";return null;}
 function getNum(t){return isSuited(t)?Number(normalizeTile(t)[0]):null;}
 
-function getAvailableTiles(){const tiles=[];if(gameMode==='4'){["萬","筒","索"].forEach(suit=>{for(let n=1;n<=9;n++){tiles.push(n+suit);if(n===5)tiles.push("5赤"+suit);}});["東","南","西","北","白","發","中"].forEach(h=>tiles.push(h));}else{[1,9].forEach(n=>tiles.push(n+"萬"));["筒","索"].forEach(suit=>{for(let n=1;n<=9;n++){tiles.push(n+suit);if(n===5)tiles.push("5赤"+suit);}});["東","南","西","白","發","中"].forEach(h=>tiles.push(h));if(kitaMode==='yaku')tiles.push("北");}return tiles;}
+// ===================================================
+// 使用牌リスト
+// ===================================================
+function getAvailableTiles(){
+    const tiles=[];
+    if(gameMode==='4'){["萬","筒","索"].forEach(suit=>{for(let n=1;n<=9;n++){tiles.push(n+suit);if(n===5)tiles.push("5赤"+suit);}});["東","南","西","北","白","發","中"].forEach(h=>tiles.push(h));}
+    else{[1,9].forEach(n=>tiles.push(n+"萬"));["筒","索"].forEach(suit=>{for(let n=1;n<=9;n++){tiles.push(n+suit);if(n===5)tiles.push("5赤"+suit);}});["東","南","西","白","發","中"].forEach(h=>tiles.push(h));if(kitaMode==='yaku')tiles.push("北");}
+    return tiles;
+}
 function getExcludedIndexes(){if(gameMode!=='3')return[];const ex=[];for(let n=2;n<=8;n++)ex.push(n-1);if(kitaMode==='nuki')ex.push(tileToIndex("北"));return ex;}
-function buildWall(){const wall=[];if(gameMode==='4'){["萬","筒","索"].forEach(suit=>{for(let n=1;n<=9;n++){if(n===5){wall.push("5赤"+suit);for(let i=0;i<3;i++)wall.push(n+suit);}else{for(let i=0;i<4;i++)wall.push(n+suit);}}});["東","南","西","北","白","發","中"].forEach(h=>{for(let i=0;i<4;i++)wall.push(h);});}else{[1,9].forEach(n=>{for(let i=0;i<4;i++)wall.push(n+"萬");});["筒","索"].forEach(suit=>{for(let n=1;n<=9;n++){if(n===5){wall.push("5赤"+suit);for(let i=0;i<3;i++)wall.push(n+suit);}else{for(let i=0;i<4;i++)wall.push(n+suit);}}});const h3=kitaMode==='yaku'?["東","南","西","北","白","發","中"]:["東","南","西","白","發","中"];h3.forEach(h=>{for(let i=0;i<4;i++)wall.push(h);});}return wall;}
+function buildWall(){
+    const wall=[];
+    if(gameMode==='4'){["萬","筒","索"].forEach(suit=>{for(let n=1;n<=9;n++){if(n===5){wall.push("5赤"+suit);for(let i=0;i<3;i++)wall.push(n+suit);}else{for(let i=0;i<4;i++)wall.push(n+suit);}}});["東","南","西","北","白","發","中"].forEach(h=>{for(let i=0;i<4;i++)wall.push(h);});}
+    else{[1,9].forEach(n=>{for(let i=0;i<4;i++)wall.push(n+"萬");});["筒","索"].forEach(suit=>{for(let n=1;n<=9;n++){if(n===5){wall.push("5赤"+suit);for(let i=0;i<3;i++)wall.push(n+suit);}else{for(let i=0;i<4;i++)wall.push(n+suit);}}});const h3=kitaMode==='yaku'?["東","南","西","北","白","發","中"]:["東","南","西","白","發","中"];h3.forEach(h=>{for(let i=0;i<4;i++)wall.push(h);});}
+    return wall;
+}
 
-function makeTileEl(name,onclick){const tile=document.createElement("div");tile.className="tile";const img=document.createElement("img");img.src=getTileImage(name);img.alt=name;img.style.width="100%";img.style.height="100%";img.onerror=()=>{img.style.display="none";tile.innerText=name;};tile.appendChild(img);tile.onclick=onclick;return tile;}
-function createTiles(){document.getElementById("tiles").innerHTML="";getAvailableTiles().forEach(name=>document.getElementById("tiles").appendChild(makeTileEl(name,()=>addTile(name))));if(gameMode==='3'&&kitaMode==='nuki'){const btn=document.createElement("button");btn.id="kitaNukiBtn";btn.innerText="北を抜く（+"+kitaNukiCount+"枚）";btn.style.cssText="margin:8px;padding:6px 16px;font-size:14px;cursor:pointer;";btn.onclick=()=>{kitaNukiCount++;btn.innerText="北を抜く（+"+kitaNukiCount+"枚）";};document.getElementById("tiles").appendChild(btn);}}
-function createDoraTiles(){document.getElementById("doraTiles").innerHTML="";getAvailableTiles().filter(t=>!isRedTile(t)).forEach(name=>{const tile=makeTileEl(name,()=>{doraIndicator=name;const dora=getDoraFromIndicator(name);document.getElementById("doraDisplay").innerText=name+(dora?"（ドラ："+dora+"）":"");document.querySelectorAll("#doraTiles .tile").forEach(t=>t.classList.remove("selected"));tile.classList.add("selected");});document.getElementById("doraTiles").appendChild(tile);});}
-function buildTsumoGrid(){const grid=document.getElementById("tsumoGrid");grid.innerHTML="";const usedCounts=handToCounts(hand);getAvailableTiles().forEach(name=>{const idx=tileToIndex(name);if(usedCounts[idx]>=4)return;if(isRedTile(name)&&hand.includes(name))return;grid.appendChild(makeTileEl(name,()=>selectTsumoTile(name)));});}
+// ===================================================
+// グリッド構築
+// ===================================================
+function makeTileEl(name,onclick){
+    const tile=document.createElement("div");tile.className="tile";
+    const img=document.createElement("img");img.src=getTileImage(name);img.alt=name;img.style.width="100%";img.style.height="100%";
+    img.onerror=()=>{img.style.display="none";tile.innerText=name;};
+    tile.appendChild(img);tile.onclick=onclick;return tile;
+}
+function createTiles(){
+    document.getElementById("tiles").innerHTML="";
+    getAvailableTiles().forEach(name=>document.getElementById("tiles").appendChild(makeTileEl(name,()=>addTile(name))));
+    if(gameMode==='3'&&kitaMode==='nuki'){const btn=document.createElement("button");btn.id="kitaNukiBtn";btn.innerText="北を抜く（+"+kitaNukiCount+"枚）";btn.style.cssText="margin:8px;padding:6px 16px;font-size:14px;cursor:pointer;";btn.onclick=()=>{kitaNukiCount++;btn.innerText="北を抜く（+"+kitaNukiCount+"枚）";};document.getElementById("tiles").appendChild(btn);}
+}
+function createDoraTiles(){
+    document.getElementById("doraTiles").innerHTML="";
+    getAvailableTiles().filter(t=>!isRedTile(t)).forEach(name=>{
+        const tile=makeTileEl(name,()=>{doraIndicator=name;const dora=getDoraFromIndicator(name);document.getElementById("doraDisplay").innerText=name+(dora?"（ドラ："+dora+"）":"");document.querySelectorAll("#doraTiles .tile").forEach(t=>t.classList.remove("selected"));tile.classList.add("selected");});
+        document.getElementById("doraTiles").appendChild(tile);
+    });
+}
+function buildTsumoGrid(){
+    const grid=document.getElementById("tsumoGrid");grid.innerHTML="";
+    const usedCounts=handToCounts(hand);
+    getAvailableTiles().forEach(name=>{const idx=tileToIndex(name);if(usedCounts[idx]>=4)return;if(isRedTile(name)&&hand.includes(name))return;grid.appendChild(makeTileEl(name,()=>selectTsumoTile(name)));});
+}
 
-function openNakiSelect(type){nakiMode=type;nakiSelected=[];const area=document.getElementById("nakiSelectArea");area.style.display='block';const instr=document.getElementById("nakiInstruction");if(type==='chi')instr.innerText='チーする3枚を順番にクリック';if(type==='pon')instr.innerText='ポンする牌を1枚クリック';if(type==='kan')instr.innerText='カンする牌を1枚クリック';const grid=document.getElementById("nakiGrid");grid.innerHTML="";getAvailableTiles().filter(t=>!isRedTile(t)).forEach(name=>{const tile=makeTileEl(name,()=>selectNakiTile(name));grid.appendChild(tile);});}
-function selectNakiTile(name){if(nakiMode==='pon'){nakiMentsu.push({type:'pon',tiles:[name,name,name]});document.getElementById("nakiSelectArea").style.display='none';renderNaki();updateActionButtons();renderHand();}else if(nakiMode==='kan'){nakiMentsu.push({type:'kan',tiles:[name,name,name,name]});document.getElementById("nakiSelectArea").style.display='none';renderNaki();updateActionButtons();renderHand();}else if(nakiMode==='chi'){nakiSelected.push(name);if(nakiSelected.length===3){nakiMentsu.push({type:'chi',tiles:[...nakiSelected]});document.getElementById("nakiSelectArea").style.display='none';nakiSelected=[];renderNaki();updateActionButtons();renderHand();}else{document.getElementById("nakiInstruction").innerText='チーする3枚（あと'+(3-nakiSelected.length)+'枚）';}}}
+// ===================================================
+// 鳴き機能
+// ===================================================
+function openNakiSelect(type){
+    nakiMode=type;nakiSelected=[];
+    const area=document.getElementById("nakiSelectArea");area.style.display='block';
+    const def=NAKI_DEF[type];
+    const instr=document.getElementById("nakiInstruction");
+    const sub=document.getElementById("nakiSubInstruction");
+
+    const instructions={
+        chi:     ['チーする牌を1枚クリック（順子の代表牌）','例：1・2・3萬の順子なら「1萬」をクリック'],
+        pon:     ['ポンする牌を1枚クリック','同じ牌が3枚の刻子として登録されます'],
+        ankan:   ['アンカンする牌を1枚クリック','手牌に同じ牌が4枚ある場合のカン（門前維持）'],
+        daiminkan:['ダイミンカンする牌を1枚クリック','他家の捨て牌でカン（門前崩れ）'],
+        kakaon:  ['カカンする牌を1枚クリック','ポンした面子に同じ牌を追加するカン（門前崩れ）'],
+    };
+    instr.innerText=instructions[type][0];
+    sub.innerText=instructions[type][1];
+
+    const grid=document.getElementById("nakiGrid");grid.innerHTML="";
+    // チーは順子、その他は刻子・カン → 字牌はチーできない
+    let tiles=getAvailableTiles().filter(t=>!isRedTile(t));
+    if(type==='chi') tiles=tiles.filter(t=>isSuited(t));
+    tiles.forEach(name=>{grid.appendChild(makeTileEl(name,()=>selectNakiTile(name)));});
+}
+
+function selectNakiTile(name){
+    const def=NAKI_DEF[nakiMode];
+    let tiles;
+    if(nakiMode==='chi'){
+        // 順子として登録（代表牌から3枚連続）
+        const n=getNum(name),s=getSuit(name);
+        if(!n||!s){cancelNaki();return;}
+        tiles=[n+s,(n+1)+s,(n+2)+s];
+        // 範囲チェック
+        if(n>7){alert('その牌からは順子を作れません');return;}
+    } else {
+        // 刻子・カン
+        const count=def.tileCount;
+        tiles=Array(count).fill(normalizeTile(name));
+    }
+    nakiMentsu.push({type:nakiMode,tiles});
+    document.getElementById("nakiSelectArea").style.display='none';
+    nakiSelected=[];
+    renderNaki();updateActionButtons();renderHand();
+}
+
 function cancelNaki(){nakiMode=null;nakiSelected=[];document.getElementById("nakiSelectArea").style.display='none';}
 function clearNaki(){nakiMentsu=[];renderNaki();updateActionButtons();renderHand();}
-function renderNaki(){const area=document.getElementById("naki-area");area.innerHTML="";if(nakiMentsu.length===0)return;const label=document.createElement("div");label.style.cssText="font-size:13px;color:#888;margin-bottom:4px;";label.innerText="鳴き面子（クリックで削除）：";area.appendChild(label);nakiMentsu.forEach((m,idx)=>{const wrap=document.createElement("div");wrap.className="naki-mentsu";m.tiles.forEach(t=>{const tile=makeTileEl(t,null);tile.style.width="36px";tile.style.height="50px";tile.style.margin="2px";tile.style.cursor="default";wrap.appendChild(tile);});const typeLabel=document.createElement("span");typeLabel.style.cssText="font-size:12px;color:#888;margin-left:4px;";typeLabel.innerText=({chi:'チー',pon:'ポン',kan:'カン'})[m.type];wrap.appendChild(typeLabel);wrap.onclick=()=>{nakiMentsu.splice(idx,1);renderNaki();updateActionButtons();renderHand();};area.appendChild(wrap);});}
 
-function addTile(tile){const max=handMax();if(hand.length>=max)return;if(isRedTile(tile)&&hand.includes(tile))return;if(hand.filter(t=>normalizeTile(t)===normalizeTile(tile)).length>=4)return;hand.push(tile);hand=sortHand(hand);renderHand();updateActionButtons();}
+function renderNaki(){
+    const area=document.getElementById("naki-area");area.innerHTML="";
+    if(nakiMentsu.length===0)return;
+    const label=document.createElement("div");label.style.cssText="font-size:13px;color:#888;margin-bottom:4px;";label.innerText="鳴き面子（クリックで削除）：";area.appendChild(label);
+    nakiMentsu.forEach((m,idx)=>{
+        const def=NAKI_DEF[m.type];
+        const wrap=document.createElement("div");wrap.className="naki-mentsu";
+        m.tiles.forEach(t=>{const tile=makeTileEl(t,null);tile.style.width="36px";tile.style.height="50px";tile.style.margin="2px";tile.style.cursor="default";wrap.appendChild(tile);});
+        const typeLabel=document.createElement("span");typeLabel.className="naki-type-label "+def.cls;typeLabel.innerText=def.label;
+        wrap.appendChild(typeLabel);
+        wrap.onclick=()=>{nakiMentsu.splice(idx,1);renderNaki();updateActionButtons();renderHand();};
+        area.appendChild(wrap);
+    });
+
+    // 門前状況表示
+    const menzenLabel=document.createElement("div");
+    menzenLabel.style.cssText="font-size:12px;margin-top:4px;color:"+(isMenzen()?'#4caf50':'#f44336')+";";
+    menzenLabel.innerText=isMenzen()?'✓ 門前（アンカンのみ）':'✗ 門前崩れ（リーチ不可）';
+    area.appendChild(menzenLabel);
+}
+
+// ===================================================
+// 手牌操作
+// ===================================================
+function addTile(tile){
+    const max=handMax();
+    if(hand.length>=max)return;
+    if(isRedTile(tile)&&hand.includes(tile))return;
+    if(hand.filter(t=>normalizeTile(t)===normalizeTile(tile)).length>=4)return;
+    hand.push(tile);hand=sortHand(hand);renderHand();updateActionButtons();
+}
 function removeTile(tile){const idx=hand.lastIndexOf(tile);if(idx!==-1){hand.splice(idx,1);renderHand();updateActionButtons();}}
 function removeTsumo(){tsumoTile=null;renderHand();updateActionButtons();}
-function resetHand(){hand=[];tsumoTile=null;nakiMentsu=[];history=null;tsumoSelectMode=false;document.getElementById("tsumoSelectArea").style.display='none';setResult("");renderHand();renderNaki();updateActionButtons();}
-function drawRandomTsumo(){if(hand.length!==handMax())return;const wall=buildWall();const allUsed=[...hand,...nakiMentsu.flatMap(m=>m.tiles)];const usedCounts=handToCounts(allUsed);const remaining=wall.filter(t=>{const idx=tileToIndex(t);if(usedCounts[idx]>0){usedCounts[idx]--;return false;}return true;});remaining.sort(()=>Math.random()-0.5);tsumoTile=remaining[0]||null;tsumoSelectMode=false;document.getElementById("tsumoSelectArea").style.display='none';renderHand();updateActionButtons();checkAgari();}
-function toggleTsumoSelect(){tsumoSelectMode=!tsumoSelectMode;const area=document.getElementById("tsumoSelectArea");if(tsumoSelectMode){area.style.display='block';buildTsumoGrid();}else{area.style.display='none';}}
+function resetHand(){hand=[];tsumoTile=null;nakiMentsu=[];history=null;tsumoSelectMode=false;document.getElementById("tsumoSelectArea").style.display='none';document.getElementById("nakiSelectArea").style.display='none';setResult("");renderHand();renderNaki();updateActionButtons();}
+
+function drawRandomTsumo(){
+    if(hand.length!==handMax())return;
+    const wall=buildWall();
+    const allUsed=[...hand,...nakiMentsu.flatMap(m=>m.tiles)];
+    const usedCounts=handToCounts(allUsed);
+    const remaining=wall.filter(t=>{const idx=tileToIndex(t);if(usedCounts[idx]>0){usedCounts[idx]--;return false;}return true;});
+    remaining.sort(()=>Math.random()-0.5);
+    tsumoTile=remaining[0]||null;
+    tsumoSelectMode=false;document.getElementById("tsumoSelectArea").style.display='none';
+    renderHand();updateActionButtons();checkAgari();
+}
+function toggleTsumoSelect(){
+    tsumoSelectMode=!tsumoSelectMode;
+    const area=document.getElementById("tsumoSelectArea");
+    if(tsumoSelectMode){area.style.display='block';buildTsumoGrid();}else{area.style.display='none';}
+}
 function selectTsumoTile(name){tsumoTile=name;tsumoSelectMode=false;document.getElementById("tsumoSelectArea").style.display='none';renderHand();updateActionButtons();checkAgari();}
-function undoDiscard(){if(!history)return;hand=[...history.hand];tsumoTile=history.tsumoTile;nakiMentsu=[...history.nakiMentsu];history=null;setResult("");renderHand();renderNaki();updateActionButtons();}
-function renderHand(){const handDiv=document.getElementById("hand");handDiv.innerHTML="";const max=handMax();const full=(hand.length===max&&tsumoTile!==null);hand.forEach(tile=>{const t=makeTileEl(tile,full?()=>selectDiscard(tile):()=>removeTile(tile));t.classList.add("selected");t.title=full?"クリックでこの牌を切る":"クリックで削除";handDiv.appendChild(t);});if(tsumoTile){const sep=document.createElement("span");sep.style.cssText="display:inline-block;width:10px;";handDiv.appendChild(sep);const t=makeTileEl(tsumoTile,full?()=>selectDiscard(tsumoTile):()=>removeTsumo());t.classList.add("tsumo-tile");t.title="ツモ牌";handDiv.appendChild(t);}document.getElementById("count").innerText=hand.length;document.getElementById("tsumoLabel").style.display=tsumoTile?"inline":"none";document.getElementById("maxTiles").innerText=handMax();}
 
+function undoDiscard(){
+    if(!history)return;
+    hand=[...history.hand];tsumoTile=history.tsumoTile;nakiMentsu=[...history.nakiMentsu];history=null;
+    setResult("");renderHand();renderNaki();updateActionButtons();
+}
+
+function renderHand(){
+    const handDiv=document.getElementById("hand");handDiv.innerHTML="";
+    const max=handMax();const full=(hand.length===max&&tsumoTile!==null);
+    hand.forEach(tile=>{
+        const t=makeTileEl(tile,full?()=>selectDiscard(tile):()=>removeTile(tile));
+        t.classList.add("selected");t.title=full?"クリックでこの牌を切る":"クリックで削除";handDiv.appendChild(t);
+    });
+    if(tsumoTile){
+        const sep=document.createElement("span");sep.style.cssText="display:inline-block;width:10px;";handDiv.appendChild(sep);
+        const t=makeTileEl(tsumoTile,full?()=>selectDiscard(tsumoTile):()=>removeTsumo());
+        t.classList.add("tsumo-tile");t.title="ツモ牌";handDiv.appendChild(t);
+    }
+    document.getElementById("count").innerText=hand.length;
+    document.getElementById("tsumoLabel").style.display=tsumoTile?"inline":"none";
+    document.getElementById("maxTiles").innerText=handMax();
+}
+
+// ===================================================
+// シャンテン計算
+// ===================================================
 function handToCounts(h){const c=Array(34).fill(0);h.forEach(t=>c[tileToIndex(t)]++);return c;}
-function calculateShanten(counts){let minS=8;const fixedMelds=nakiMentsu.length;function dfs(c,idx,melds,pairs,taatsu){while(idx<34&&c[idx]===0)idx++;if(idx>=34){const totalMelds=melds+fixedMelds,nm=4-totalMelds,ut=Math.min(taatsu,nm),up=Math.min(pairs,1),ept=Math.min(pairs-up,nm-ut);let s=8-totalMelds*2-ut-ept-up;if(up===0)s+=1;minS=Math.min(minS,s);return;}if(c[idx]>=3){c[idx]-=3;dfs(c,idx,melds+1,pairs,taatsu);c[idx]+=3;}if(idx<27&&idx%9<=6&&c[idx]>0&&c[idx+1]>0&&c[idx+2]>0){c[idx]--;c[idx+1]--;c[idx+2]--;dfs(c,idx,melds+1,pairs,taatsu);c[idx]++;c[idx+1]++;c[idx+2]++;}if(c[idx]>=2){c[idx]-=2;dfs(c,idx,melds,pairs+1,taatsu);c[idx]+=2;}if(idx<27){if(idx%9<=7&&c[idx]>0&&c[idx+1]>0){c[idx]--;c[idx+1]--;dfs(c,idx,melds,pairs,taatsu+1);c[idx]++;c[idx+1]++;}if(idx%9<=6&&c[idx]>0&&c[idx+2]>0){c[idx]--;c[idx+2]--;dfs(c,idx,melds,pairs,taatsu+1);c[idx]++;c[idx+2]++;}}c[idx]--;dfs(c,idx,melds,pairs,taatsu);c[idx]++;}dfs([...counts],0,0,0,0);return minS;}
-function countUkeire(h){const bc=handToCounts(h),bs=calculateShanten(bc),ex=getExcludedIndexes();let u=0;for(let i=0;i<34;i++){if(ex.includes(i)||bc[i]>=4)continue;bc[i]++;if(calculateShanten(bc)<bs)u+=4-(bc[i]-1);bc[i]--;}return u;}
 
-function generateExplanation(results,bestTiles,selectedTile){const best=results.find(r=>r.discard===bestTiles[0]);const sel=selectedTile?results.find(r=>r.discard===selectedTile):null;let text="【配効率の解説】\n";if(best.shanten===0){text+="この手牌はテンパイです。\n「"+bestTiles.join("・")+"」を切ると受け入れ枚数が最大（"+best.ukeire+"枚）になります。\n";if(best.tenpaiInfo){const yakuAri=best.tenpaiInfo.filter(w=>w.yaku.length>0);if(yakuAri.length>0)text+="役のある待ちがあります。積極的に和了を狙いましょう。\n";else text+="役なしの待ちのみです。リーチをかけるか役のある待ちを探しましょう。\n";}}else{text+="現在"+best.shanten+"シャンテンです。\n「"+bestTiles.join("・")+"」を切ると受け入れ枚数が最大（"+best.ukeire+"枚）になります。\n受け入れ枚数が多いほど次のツモで有効牌を引ける確率が高くなります。\n";}if(sel&&selectedTile&&!bestTiles.includes(selectedTile)){if(sel.shanten>best.shanten)text+="\nあなたが選んだ「"+selectedTile+"」を切るとシャンテン数が"+sel.shanten+"になり、最善より"+((sel.shanten-best.shanten))+"シャンテン悪化します。";else if(sel.ukeire<best.ukeire)text+="\nあなたが選んだ「"+selectedTile+"」は受け入れ枚数"+sel.ukeire+"枚で、最善の"+best.ukeire+"枚より"+(best.ukeire-sel.ukeire)+"枚少ないです。";}return text;}
+function calculateShanten(counts){
+    let minS=8;
+    const fixedMelds=nakiMentsu.length;
+    function dfs(c,idx,melds,pairs,taatsu){
+        while(idx<34&&c[idx]===0)idx++;
+        if(idx>=34){
+            const totalMelds=melds+fixedMelds,nm=4-totalMelds,ut=Math.min(taatsu,nm),up=Math.min(pairs,1),ept=Math.min(pairs-up,nm-ut);
+            let s=8-totalMelds*2-ut-ept-up;if(up===0)s+=1;minS=Math.min(minS,s);return;
+        }
+        if(c[idx]>=3){c[idx]-=3;dfs(c,idx,melds+1,pairs,taatsu);c[idx]+=3;}
+        if(idx<27&&idx%9<=6&&c[idx]>0&&c[idx+1]>0&&c[idx+2]>0){c[idx]--;c[idx+1]--;c[idx+2]--;dfs(c,idx,melds+1,pairs,taatsu);c[idx]++;c[idx+1]++;c[idx+2]++;}
+        if(c[idx]>=2){c[idx]-=2;dfs(c,idx,melds,pairs+1,taatsu);c[idx]+=2;}
+        if(idx<27){
+            if(idx%9<=7&&c[idx]>0&&c[idx+1]>0){c[idx]--;c[idx+1]--;dfs(c,idx,melds,pairs,taatsu+1);c[idx]++;c[idx+1]++;}
+            if(idx%9<=6&&c[idx]>0&&c[idx+2]>0){c[idx]--;c[idx+2]--;dfs(c,idx,melds,pairs,taatsu+1);c[idx]++;c[idx+2]++;}
+        }
+        c[idx]--;dfs(c,idx,melds,pairs,taatsu);c[idx]++;
+    }
+    dfs([...counts],0,0,0,0);return minS;
+}
 
-function findAllWinForms(handArray){const counts=handToCounts(handArray),results=[];const need=4-nakiMentsu.length;function extractMentsu(c,idx,acc){while(idx<34&&c[idx]===0)idx++;if(idx>=34){if(acc.length===need)results.push({mentsu:[...acc]});return;}if(c[idx]>=3){const t=indexToTile(idx);c[idx]-=3;acc.push({type:'koutsu',tiles:[t,t,t]});extractMentsu(c,idx,acc);acc.pop();c[idx]+=3;}if(idx<27&&idx%9<=6&&c[idx]>0&&c[idx+1]>0&&c[idx+2]>0){const t1=indexToTile(idx),t2=indexToTile(idx+1),t3=indexToTile(idx+2);c[idx]--;c[idx+1]--;c[idx+2]--;acc.push({type:'shuntsu',tiles:[t1,t2,t3]});extractMentsu(c,idx,acc);acc.pop();c[idx]++;c[idx+1]++;c[idx+2]++;}}for(let j=0;j<34;j++){if(counts[j]>=2){counts[j]-=2;const jTile=indexToTile(j);const before=results.length;extractMentsu([...counts],0,[]);for(let i=before;i<results.length;i++)results[i].jantai={type:'jantai',tiles:[jTile,jTile]};counts[j]+=2;}}return results;}
+function countUkeire(h){
+    const bc=handToCounts(h),bs=calculateShanten(bc),ex=getExcludedIndexes();let u=0;
+    for(let i=0;i<34;i++){if(ex.includes(i)||bc[i]>=4)continue;bc[i]++;if(calculateShanten(bc)<bs)u+=4-(bc[i]-1);bc[i]--;}
+    return u;
+}
+
+// ===================================================
+// 配効率の解説
+// ===================================================
+function generateExplanation(results,bestTiles,selectedTile){
+    const best=results.find(r=>r.discard===bestTiles[0]);
+    const sel=selectedTile?results.find(r=>r.discard===selectedTile):null;
+    let text="【配効率の解説】\n";
+    if(best.shanten===0){
+        text+="この手牌はテンパイです。\n「"+bestTiles.join("・")+"」を切ると受け入れ枚数が最大（"+best.ukeire+"枚）になります。\n";
+        if(best.tenpaiInfo){const yakuAri=best.tenpaiInfo.filter(w=>w.yaku.length>0);if(yakuAri.length>0)text+="役のある待ちがあります。積極的に和了を狙いましょう。\n";else text+="役なしの待ちのみです。リーチをかけるか役のある待ちを探しましょう。\n";}
+    } else {
+        text+="現在"+best.shanten+"シャンテンです。\n「"+bestTiles.join("・")+"」を切ると受け入れ枚数が最大（"+best.ukeire+"枚）になります。\n受け入れ枚数が多いほど次のツモで有効牌を引ける確率が高くなります。\n";
+    }
+    if(sel&&selectedTile&&!bestTiles.includes(selectedTile)){
+        if(sel.shanten>best.shanten)text+="\nあなたが選んだ「"+selectedTile+"」を切るとシャンテン数が"+sel.shanten+"になり最善より"+(sel.shanten-best.shanten)+"シャンテン悪化します。";
+        else if(sel.ukeire<best.ukeire)text+="\nあなたが選んだ「"+selectedTile+"」は受け入れ枚数"+sel.ukeire+"枚で、最善の"+best.ukeire+"枚より"+(best.ukeire-sel.ukeire)+"枚少ないです。";
+    }
+    return text;
+}
+
+// ===================================================
+// 和了形分解
+// ===================================================
+function findAllWinForms(handArray){
+    const counts=handToCounts(handArray),results=[];
+    const need=4-nakiMentsu.length;
+    function extractMentsu(c,idx,acc){
+        while(idx<34&&c[idx]===0)idx++;
+        if(idx>=34){if(acc.length===need)results.push({mentsu:[...acc]});return;}
+        if(c[idx]>=3){const t=indexToTile(idx);c[idx]-=3;acc.push({type:'koutsu',tiles:[t,t,t]});extractMentsu(c,idx,acc);acc.pop();c[idx]+=3;}
+        if(idx<27&&idx%9<=6&&c[idx]>0&&c[idx+1]>0&&c[idx+2]>0){const t1=indexToTile(idx),t2=indexToTile(idx+1),t3=indexToTile(idx+2);c[idx]--;c[idx+1]--;c[idx+2]--;acc.push({type:'shuntsu',tiles:[t1,t2,t3]});extractMentsu(c,idx,acc);acc.pop();c[idx]++;c[idx+1]++;c[idx+2]++;}
+    }
+    for(let j=0;j<34;j++){
+        if(counts[j]>=2){
+            counts[j]-=2;const jTile=indexToTile(j);const before=results.length;
+            extractMentsu([...counts],0,[]);
+            for(let i=before;i<results.length;i++)results[i].jantai={type:'jantai',tiles:[jTile,jTile]};
+            counts[j]+=2;
+        }
+    }
+    return results;
+}
 function isChiitoi(h){const c=handToCounts(h);return c.filter(x=>x>=2).length===7&&c.filter(x=>x===1).length===0&&h.length===14&&nakiMentsu.length===0;}
 function isKokushi(h){if(nakiMentsu.length>0)return false;const yc=["1萬","9萬","1筒","9筒","1索","9索","東","南","西","北","白","發","中"];const norm=h.map(t=>normalizeTile(t));return yc.every(t=>norm.includes(t))&&yc.some(t=>norm.filter(x=>x===t).length>=2);}
-function calcFu(form,isTsumo){const{jantai,mentsu}=form;let fu=20;const jTile=normalizeTile(jantai.tiles[0]);if(['白','發','中'].includes(jTile)||jTile===baKaze||jTile===jiKaze)fu+=2;const allM=[...mentsu,...nakiMentsu];allM.forEach(m=>{const tile=normalizeTile(m.tiles[0]);const iy=isYaochuTile(tile);if(m.type==='koutsu'||m.type==='pon')fu+=iy?16:8;if(m.type==='kan')fu+=iy?32:16;});if(isTsumo)fu+=2;else fu+=10;fu=Math.ceil(fu/10)*10;return fu;}
 
-function detectYaku(handArray){const norm=handArray.map(t=>normalizeTile(t));const redCount=handArray.filter(t=>isRedTile(t)).length;const isMenzen=nakiMentsu.length===0;if(situation.tenchi&&isMenzen){const y=[{name:jiKaze==='東'?'天和':'地和',han:13,yakuman:true}];if(redCount>0)y.push({name:'赤ドラ×'+redCount,han:redCount,yakuman:false});return y;}if(isKokushi(handArray))return[{name:'国士無双',han:13,yakuman:true}];if(isChiitoi(handArray)){const y=[{name:'七対子',han:2,yakuman:false}];if(isMenzen&&situation.riichi)y.push({name:'リーチ',han:1,yakuman:false});if(isMenzen&&situation.driichi)y.push({name:'ダブルリーチ',han:2,yakuman:false});if(isMenzen&&situation.tsumo)y.push({name:'門前清自摸和',han:1,yakuman:false});if(situation.haitei)y.push({name:situation.tsumo?'海底摸月':'河底撈魚',han:1,yakuman:false});if(doraIndicator){const d=getDoraFromIndicator(doraIndicator);const dc=norm.filter(t=>t===d).length;if(dc>0)y.push({name:'ドラ×'+dc,han:dc,yakuman:false});}if(redCount>0)y.push({name:'赤ドラ×'+redCount,han:redCount,yakuman:false});return y;}const forms=findAllWinForms(handArray);if(forms.length===0)return[];let best=[],bestHan=-1,bestFu=0;for(const form of forms){const y=detectYakuFromForm(form,handArray,norm,redCount,isMenzen);const han=y.reduce((s,x)=>s+x.han,0);const fu=calcFu(form,situation.tsumo);if(han>bestHan||(han===bestHan&&fu>bestFu)){bestHan=han;bestFu=fu;best=y;}}return best;}
+// ===================================================
+// 符計算
+// ===================================================
+function calcFu(form,isTsumo){
+    const{jantai,mentsu}=form;let fu=20;
+    const jTile=normalizeTile(jantai.tiles[0]);
+    if(['白','發','中'].includes(jTile)||jTile===baKaze||jTile===jiKaze)fu+=2;
+    const allM=[...mentsu,...nakiMentsu];
+    allM.forEach(m=>{
+        const tile=normalizeTile(m.tiles[0]);const iy=isYaochuTile(tile);
+        if(m.type==='koutsu')fu+=iy?16:8; // 暗刻
+        if(m.type==='pon')fu+=iy?8:4;     // 明刻
+        if(m.type==='ankan')fu+=iy?32:16; // 暗槓
+        if(m.type==='daiminkan'||m.type==='kakaon')fu+=iy?16:8; // 明槓
+    });
+    if(isTsumo)fu+=2;else fu+=10;
+    fu=Math.ceil(fu/10)*10;return fu;
+}
 
-function detectYakuFromForm(form,handArray,norm,redCount,isMenzen){const{jantai,mentsu}=form;const allM=[...mentsu,...nakiMentsu];const allNorm=[...jantai.tiles,...allM.flatMap(m=>m.tiles)].map(t=>normalizeTile(t));const suits=["萬","筒","索"];const y=[];const jTile=normalizeTile(jantai.tiles[0]);if(isMenzen&&mentsu.every(m=>m.type==='shuntsu')&&!['白','發','中',baKaze,jiKaze].includes(jTile)&&!situation.tsumo)y.push({name:'ピンフ',han:1,yakuman:false});if(allNorm.every(t=>!isYaochuTile(t)))y.push({name:'タンヤオ',han:1,yakuman:false});['白','發','中'].forEach(d=>{if(allM.some(m=>['koutsu','pon','kan'].includes(m.type)&&normalizeTile(m.tiles[0])===d))y.push({name:d,han:1,yakuman:false});});if(allM.some(m=>['koutsu','pon','kan'].includes(m.type)&&normalizeTile(m.tiles[0])===baKaze))y.push({name:'場風（'+baKaze+'）',han:1,yakuman:false});if(allM.some(m=>['koutsu','pon','kan'].includes(m.type)&&normalizeTile(m.tiles[0])===jiKaze))y.push({name:'自風（'+jiKaze+'）',han:1,yakuman:false});if(isMenzen){const sKeys=mentsu.filter(m=>m.type==='shuntsu').map(m=>m.tiles.map(t=>normalizeTile(t)).join(','));const iipei=sKeys.reduce((acc,k,i)=>acc+(sKeys.indexOf(k)!==i?1:0),0);if(iipei===1)y.push({name:'一盃口',han:1,yakuman:false});if(iipei===2)y.push({name:'二盃口',han:3,yakuman:false});}for(const m of allM.filter(m=>m.type==='shuntsu'||m.type==='chi')){const n=getNum(m.tiles[0]);if(n&&suits.every(s=>allM.some(m2=>(m2.type==='shuntsu'||m2.type==='chi')&&getNum(m2.tiles[0])===n&&getSuit(m2.tiles[0])===s))){y.push({name:'三色同順',han:isMenzen?2:1,yakuman:false});break;}}for(const m of allM.filter(m=>['koutsu','pon','kan'].includes(m.type))){const n=getNum(m.tiles[0]);if(n&&suits.every(s=>allM.some(m2=>['koutsu','pon','kan'].includes(m2.type)&&getNum(m2.tiles[0])===n&&getSuit(m2.tiles[0])===s))){y.push({name:'三色同刻',han:2,yakuman:false});break;}}for(const s of suits){if(allM.some(m=>(m.type==='shuntsu'||m.type==='chi')&&getNum(m.tiles[0])===1&&getSuit(m.tiles[0])===s)&&allM.some(m=>(m.type==='shuntsu'||m.type==='chi')&&getNum(m.tiles[0])===4&&getSuit(m.tiles[0])===s)&&allM.some(m=>(m.type==='shuntsu'||m.type==='chi')&&getNum(m.tiles[0])===7&&getSuit(m.tiles[0])===s)){y.push({name:'一気通貫',han:isMenzen?2:1,yakuman:false});break;}}if(allM.every(m=>['koutsu','pon','kan'].includes(m.type)))y.push({name:'対々和',han:2,yakuman:false});const anko=mentsu.filter(m=>m.type==='koutsu').length;if(anko===4&&isMenzen)y.push({name:'四暗刻',han:13,yakuman:true});else if(anko>=3)y.push({name:'三暗刻',han:2,yakuman:false});if(allNorm.every(t=>isYaochuTile(t)))y.push({name:'混老頭',han:2,yakuman:false});if(allNorm.every(t=>isSuited(t)&&(getNum(t)===1||getNum(t)===9)))y.push({name:'清老頭',han:13,yakuman:true});if(allM.every(m=>m.tiles.some(t=>isYaochuTile(t)))&&jantai.tiles.some(t=>isYaochuTile(t))&&allM.some(m=>m.type==='shuntsu'||m.type==='chi')&&allNorm.some(t=>isHonorTile(t)))y.push({name:'混全帯么九',han:isMenzen?2:1,yakuman:false});if(allM.every(m=>m.tiles.some(t=>isYaochuTile(t)))&&jantai.tiles.some(t=>isYaochuTile(t))&&allM.some(m=>m.type==='shuntsu'||m.type==='chi')&&allNorm.every(t=>!isHonorTile(t)))y.push({name:'純全帯么九',han:isMenzen?3:2,yakuman:false});const us=[...new Set(allNorm.filter(t=>isSuited(t)).map(t=>getSuit(t)))];const hh=allNorm.some(t=>isHonorTile(t));if(us.length===1&&hh)y.push({name:'混一色',han:isMenzen?3:2,yakuman:false});if(us.length===1&&!hh)y.push({name:'清一色',han:isMenzen?6:5,yakuman:false});if(allNorm.every(t=>["2索","3索","4索","6索","8索","發"].includes(t)))y.push({name:'緑一色',han:13,yakuman:true});const dk=dragonOrder.filter(d=>allM.some(m=>['koutsu','pon','kan'].includes(m.type)&&normalizeTile(m.tiles[0])===d));if(dk.length===3)y.push({name:'大三元',han:13,yakuman:true});else if(dk.length===2&&dragonOrder.includes(normalizeTile(jantai.tiles[0])))y.push({name:'小三元',han:4,yakuman:false});const wk=windOrder.filter(w=>allM.some(m=>['koutsu','pon','kan'].includes(m.type)&&normalizeTile(m.tiles[0])===w));if(wk.length===4)y.push({name:'大四喜',han:13,yakuman:true});else if(wk.length===3&&windOrder.includes(normalizeTile(jantai.tiles[0])))y.push({name:'小四喜',han:13,yakuman:true});if(allNorm.every(t=>isHonorTile(t)))y.push({name:'字一色',han:13,yakuman:true});if(isMenzen){for(const s of suits){if(!norm.every(t=>getSuit(t)===s))continue;const cs=Array(9).fill(0);norm.forEach(t=>{if(getSuit(t)===s)cs[getNum(t)-1]++;});if(cs[0]>=3&&cs[8]>=3&&cs.slice(1,8).every(c=>c>=1)){y.push({name:'九蓮宝燈',han:13,yakuman:true});break;}}}if(isMenzen&&situation.riichi)y.push({name:'リーチ',han:1,yakuman:false});if(isMenzen&&situation.driichi)y.push({name:'ダブルリーチ',han:2,yakuman:false});if(isMenzen&&situation.tsumo&&y.length>0)y.push({name:'門前清自摸和',han:1,yakuman:false});if(situation.haitei)y.push({name:situation.tsumo?'海底摸月':'河底撈魚',han:1,yakuman:false});if(situation.rinshan)y.push({name:'嶺上開花',han:1,yakuman:false});if(situation.chankan)y.push({name:'槍槓',han:1,yakuman:false});if(doraIndicator){const d=getDoraFromIndicator(doraIndicator);const dc=norm.filter(t=>t===d).length;if(dc>0)y.push({name:'ドラ×'+dc,han:dc,yakuman:false});}if(redCount>0)y.push({name:'赤ドラ×'+redCount,han:redCount,yakuman:false});return y;}
+// ===================================================
+// 役判定
+// ===================================================
+function detectYaku(handArray){
+    const norm=handArray.map(t=>normalizeTile(t));
+    const redCount=handArray.filter(t=>isRedTile(t)).length;
+    const menzen=isMenzen();
+    if(situation.tenchi&&menzen){const y=[{name:jiKaze==='東'?'天和':'地和',han:13,yakuman:true}];if(redCount>0)y.push({name:'赤ドラ×'+redCount,han:redCount,yakuman:false});return y;}
+    if(isKokushi(handArray))return[{name:'国士無双',han:13,yakuman:true}];
+    if(isChiitoi(handArray)){
+        const y=[{name:'七対子',han:2,yakuman:false}];
+        if(menzen&&situation.riichi)y.push({name:'リーチ',han:1,yakuman:false});
+        if(menzen&&situation.driichi)y.push({name:'ダブルリーチ',han:2,yakuman:false});
+        if(menzen&&situation.tsumo)y.push({name:'門前清自摸和',han:1,yakuman:false});
+        if(situation.haitei)y.push({name:situation.tsumo?'海底摸月':'河底撈魚',han:1,yakuman:false});
+        if(doraIndicator){const d=getDoraFromIndicator(doraIndicator);const dc=norm.filter(t=>t===d).length;if(dc>0)y.push({name:'ドラ×'+dc,han:dc,yakuman:false});}
+        if(redCount>0)y.push({name:'赤ドラ×'+redCount,han:redCount,yakuman:false});
+        return y;
+    }
+    const forms=findAllWinForms(handArray);
+    if(forms.length===0)return[];
+    let best=[],bestHan=-1,bestFu=0;
+    for(const form of forms){
+        const y=detectYakuFromForm(form,handArray,norm,redCount,menzen);
+        const han=y.reduce((s,x)=>s+x.han,0);const fu=calcFu(form,situation.tsumo);
+        if(han>bestHan||(han===bestHan&&fu>bestFu)){bestHan=han;bestFu=fu;best=y;}
+    }
+    return best;
+}
 
+function detectYakuFromForm(form,handArray,norm,redCount,menzen){
+    const{jantai,mentsu}=form;
+    const allM=[...mentsu,...nakiMentsu];
+    const allNorm=[...jantai.tiles,...allM.flatMap(m=>m.tiles)].map(t=>normalizeTile(t));
+    const suits=["萬","筒","索"];const y=[];
+    const jTile=normalizeTile(jantai.tiles[0]);
+
+    // ピンフ（門前のみ）
+    if(menzen&&mentsu.every(m=>m.type==='shuntsu')&&!['白','發','中',baKaze,jiKaze].includes(jTile)&&!situation.tsumo)
+        y.push({name:'ピンフ',han:1,yakuman:false});
+    // タンヤオ
+    if(allNorm.every(t=>!isYaochuTile(t)))y.push({name:'タンヤオ',han:1,yakuman:false});
+    // 役牌
+    ['白','發','中'].forEach(d=>{if(allM.some(m=>['koutsu','pon','ankan','daiminkan','kakaon'].includes(m.type)&&normalizeTile(m.tiles[0])===d))y.push({name:d,han:1,yakuman:false});});
+    if(allM.some(m=>['koutsu','pon','ankan','daiminkan','kakaon'].includes(m.type)&&normalizeTile(m.tiles[0])===baKaze))y.push({name:'場風（'+baKaze+'）',han:1,yakuman:false});
+    if(allM.some(m=>['koutsu','pon','ankan','daiminkan','kakaon'].includes(m.type)&&normalizeTile(m.tiles[0])===jiKaze))y.push({name:'自風（'+jiKaze+'）',han:1,yakuman:false});
+    // 一盃口・二盃口（門前のみ）
+    if(menzen){const sKeys=mentsu.filter(m=>m.type==='shuntsu').map(m=>m.tiles.map(t=>normalizeTile(t)).join(','));const iipei=sKeys.reduce((acc,k,i)=>acc+(sKeys.indexOf(k)!==i?1:0),0);if(iipei===1)y.push({name:'一盃口',han:1,yakuman:false});if(iipei===2)y.push({name:'二盃口',han:3,yakuman:false});}
+    // 三色同順（食い下がり1翻）
+    const shuntsuTypes=['shuntsu','chi'];
+    for(const m of allM.filter(m=>shuntsuTypes.includes(m.type))){const n=getNum(m.tiles[0]);if(n&&suits.every(s=>allM.some(m2=>shuntsuTypes.includes(m2.type)&&getNum(m2.tiles[0])===n&&getSuit(m2.tiles[0])===s))){y.push({name:'三色同順',han:menzen?2:1,yakuman:false});break;}}
+    // 三色同刻
+    const koutsuTypes=['koutsu','pon','ankan','daiminkan','kakaon'];
+    for(const m of allM.filter(m=>koutsuTypes.includes(m.type))){const n=getNum(m.tiles[0]);if(n&&suits.every(s=>allM.some(m2=>koutsuTypes.includes(m2.type)&&getNum(m2.tiles[0])===n&&getSuit(m2.tiles[0])===s))){y.push({name:'三色同刻',han:2,yakuman:false});break;}}
+    // 一気通貫（食い下がり1翻）
+    for(const s of suits){if(allM.some(m=>shuntsuTypes.includes(m.type)&&getNum(m.tiles[0])===1&&getSuit(m.tiles[0])===s)&&allM.some(m=>shuntsuTypes.includes(m.type)&&getNum(m.tiles[0])===4&&getSuit(m.tiles[0])===s)&&allM.some(m=>shuntsuTypes.includes(m.type)&&getNum(m.tiles[0])===7&&getSuit(m.tiles[0])===s)){y.push({name:'一気通貫',han:menzen?2:1,yakuman:false});break;}}
+    // 対々和
+    if(allM.every(m=>koutsuTypes.includes(m.type)))y.push({name:'対々和',han:2,yakuman:false});
+    // 三暗刻・四暗刻（暗刻のみカウント）
+    const ankoTypes=['koutsu','ankan'];
+    const anko=mentsu.filter(m=>ankoTypes.includes(m.type)).length+nakiMentsu.filter(m=>m.type==='ankan').length;
+    if(anko===4)y.push({name:'四暗刻',han:13,yakuman:true});
+    else if(anko>=3)y.push({name:'三暗刻',han:2,yakuman:false});
+    // 混老頭
+    if(allNorm.every(t=>isYaochuTile(t)))y.push({name:'混老頭',han:2,yakuman:false});
+    // 清老頭
+    if(allNorm.every(t=>isSuited(t)&&(getNum(t)===1||getNum(t)===9)))y.push({name:'清老頭',han:13,yakuman:true});
+    // 混全帯么九（食い下がり1翻）
+    if(allM.every(m=>m.tiles.some(t=>isYaochuTile(t)))&&jantai.tiles.some(t=>isYaochuTile(t))&&allM.some(m=>shuntsuTypes.includes(m.type))&&allNorm.some(t=>isHonorTile(t)))y.push({name:'混全帯么九',han:menzen?2:1,yakuman:false});
+    // 純全帯么九（食い下がり1翻）
+    if(allM.every(m=>m.tiles.some(t=>isYaochuTile(t)))&&jantai.tiles.some(t=>isYaochuTile(t))&&allM.some(m=>shuntsuTypes.includes(m.type))&&allNorm.every(t=>!isHonorTile(t)))y.push({name:'純全帯么九',han:menzen?3:2,yakuman:false});
+    // 混一色・清一色（食い下がり）
+    const us=[...new Set(allNorm.filter(t=>isSuited(t)).map(t=>getSuit(t)))];const hh=allNorm.some(t=>isHonorTile(t));
+    if(us.length===1&&hh)y.push({name:'混一色',han:menzen?3:2,yakuman:false});
+    if(us.length===1&&!hh)y.push({name:'清一色',han:menzen?6:5,yakuman:false});
+    // 緑一色
+    if(allNorm.every(t=>["2索","3索","4索","6索","8索","發"].includes(t)))y.push({name:'緑一色',han:13,yakuman:true});
+    // 大三元・小三元
+    const dk=dragonOrder.filter(d=>allM.some(m=>koutsuTypes.includes(m.type)&&normalizeTile(m.tiles[0])===d));
+    if(dk.length===3)y.push({name:'大三元',han:13,yakuman:true});
+    else if(dk.length===2&&dragonOrder.includes(jTile))y.push({name:'小三元',han:4,yakuman:false});
+    // 大四喜・小四喜
+    const wk=windOrder.filter(w=>allM.some(m=>koutsuTypes.includes(m.type)&&normalizeTile(m.tiles[0])===w));
+    if(wk.length===4)y.push({name:'大四喜',han:13,yakuman:true});
+    else if(wk.length===3&&windOrder.includes(jTile))y.push({name:'小四喜',han:13,yakuman:true});
+    // 字一色
+    if(allNorm.every(t=>isHonorTile(t)))y.push({name:'字一色',han:13,yakuman:true});
+    // 九蓮宝燈（門前のみ）
+    if(menzen){for(const s of suits){if(!norm.every(t=>getSuit(t)===s))continue;const cs=Array(9).fill(0);norm.forEach(t=>{if(getSuit(t)===s)cs[getNum(t)-1]++;});if(cs[0]>=3&&cs[8]>=3&&cs.slice(1,8).every(c=>c>=1)){y.push({name:'九蓮宝燈',han:13,yakuman:true});break;}}}
+    // 状況系
+    if(menzen&&situation.riichi)y.push({name:'リーチ',han:1,yakuman:false});
+    if(menzen&&situation.driichi)y.push({name:'ダブルリーチ',han:2,yakuman:false});
+    if(menzen&&situation.tsumo&&y.length>0)y.push({name:'門前清自摸和',han:1,yakuman:false});
+    if(situation.haitei)y.push({name:situation.tsumo?'海底摸月':'河底撈魚',han:1,yakuman:false});
+    if(situation.rinshan)y.push({name:'嶺上開花',han:1,yakuman:false});
+    if(situation.chankan)y.push({name:'槍槓',han:1,yakuman:false});
+    // ドラ
+    if(doraIndicator){const d=getDoraFromIndicator(doraIndicator);const dc=norm.filter(t=>t===d).length;if(dc>0)y.push({name:'ドラ×'+dc,han:dc,yakuman:false});}
+    if(redCount>0)y.push({name:'赤ドラ×'+redCount,han:redCount,yakuman:false});
+    return y;
+}
+
+// ===================================================
+// 点数計算
+// ===================================================
 function calcScore(han,fu){if(han>=13)return'役満';if(han>=11)return'三倍満';if(han>=8)return'倍満';if(han>=6)return'跳満';if(han>=5||(han===4&&fu>=30)||(han===3&&fu>=70))return'満貫';return'';}
 
-function checkAgari(){const full=getFullHand();if(full.length!==fullHandMax())return;const shanten=calculateShanten(handToCounts(full));if(shanten!==-1)return;const yaku=detectYaku(full);const mainYaku=yaku.filter(y=>!y.name.startsWith('ドラ')&&!y.name.startsWith('赤ドラ'));if(mainYaku.length===0&&!situation.tenchi)return;const totalHan=yaku.reduce((s,y)=>s+y.han,0);const isYakuman=yaku.some(y=>y.yakuman);let fuText='';if(!isYakuman&&!isChiitoi(full)){const forms=findAllWinForms(full);if(forms.length>0){const fu=calcFu(forms[0],situation.tsumo);fuText=fu+'符';}}else if(isChiitoi(full)){fuText='25符';}const scoreText=calcScore(totalHan,fuText?parseInt(fuText):30);let html='<div class="agari-box">🎉 <strong>和了！</strong><br><span style="font-size:13px;color:#555;">【場風】'+baKaze+' 【自風】'+jiKaze+'</span><br><br>';yaku.forEach(y=>{html+='<span style="font-size:15px;">'+y.name+' '+(y.yakuman?'<span style="color:red;">役満</span>':y.han+'翻')+'</span><br>';});html+='<br><strong style="font-size:17px;">';if(fuText)html+=fuText+' ';html+=totalHan+'翻';if(scoreText)html+=' '+scoreText;html+='</strong></div>';document.getElementById("result").innerHTML=html;}
+// ===================================================
+// 和了チェック
+// ===================================================
+function checkAgari(){
+    const full=getFullHand();if(full.length!==fullHandMax())return;
+    const shanten=calculateShanten(handToCounts(full));if(shanten!==-1)return;
+    const yaku=detectYaku(full);
+    const mainYaku=yaku.filter(y=>!y.name.startsWith('ドラ')&&!y.name.startsWith('赤ドラ'));
+    if(mainYaku.length===0&&!situation.tenchi)return;
+    const totalHan=yaku.reduce((s,y)=>s+y.han,0);const isYakuman=yaku.some(y=>y.yakuman);
+    let fuText='';
+    if(!isYakuman&&!isChiitoi(full)){const forms=findAllWinForms(full);if(forms.length>0){fuText=calcFu(forms[0],situation.tsumo)+'符';}}
+    else if(isChiitoi(full)){fuText='25符';}
+    const scoreText=calcScore(totalHan,fuText?parseInt(fuText):30);
+    let html='<div class="agari-box">🎉 <strong>和了！</strong><br>';
+    html+='<span style="font-size:13px;color:#555;">【場風】'+baKaze+' 【自風】'+jiKaze;
+    if(nakiMentsu.length>0)html+=' 【'+nakiMentsu.map(m=>NAKI_DEF[m.type].label+'('+m.tiles[0]+')').join('・')+'】';
+    html+='</span><br><br>';
+    yaku.forEach(y=>{html+='<span style="font-size:15px;">'+y.name+' '+(y.yakuman?'<span style="color:red;">役満</span>':y.han+'翻')+'</span><br>';});
+    html+='<br><strong style="font-size:17px;">';if(fuText)html+=fuText+' ';html+=totalHan+'翻';if(scoreText)html+=' '+scoreText;html+='</strong></div>';
+    document.getElementById("result").innerHTML=html;
+}
 
-function getTenpaiInfo(h){const bc=handToCounts(h);if(calculateShanten(bc)!==0)return null;const ex=getExcludedIndexes(),waits=[];for(let i=0;i<34;i++){if(ex.includes(i)||bc[i]>=4)continue;bc[i]++;if(calculateShanten(bc)<0){const wh=[...h,indexToTile(i)];waits.push({tile:indexToTile(i),yaku:detectYaku(wh),count:4-(bc[i]-1)});}bc[i]--;}return waits;}
+// ===================================================
+// テンパイ情報
+// ===================================================
+function getTenpaiInfo(h){
+    const bc=handToCounts(h);if(calculateShanten(bc)!==0)return null;
+    const ex=getExcludedIndexes(),waits=[];
+    for(let i=0;i<34;i++){if(ex.includes(i)||bc[i]>=4)continue;bc[i]++;if(calculateShanten(bc)<0){const wh=[...h,indexToTile(i)];waits.push({tile:indexToTile(i),yaku:detectYaku(wh),count:4-(bc[i]-1)});}bc[i]--;}
+    return waits;
+}
 
+// ===================================================
+// 打牌評価
+// ===================================================
 function getFullHand(){return tsumoTile?[...hand,tsumoTile]:hand;}
-function evaluateAllDiscards(){const full=getFullHand();if(full.length!==fullHandMax())return[];const results=[],checked=new Set();for(let i=0;i<full.length;i++){const discard=full[i];if(checked.has(discard))continue;checked.add(discard);const nh=[...full];nh.splice(i,1);const shanten=calculateShanten(handToCounts(nh));const ukeire=countUkeire(nh);const tenpaiInfo=shanten===0?getTenpaiInfo(nh):null;results.push({discard,shanten,ukeire,tenpaiInfo});}return results;}
-function getBestDiscards(){const r=evaluateAllDiscards();if(!r.length)return[];const minS=Math.min(...r.map(x=>x.shanten));const c=r.filter(x=>x.shanten===minS);const maxU=Math.max(...c.map(x=>x.ukeire));return c.filter(x=>x.ukeire===maxU).map(x=>x.discard);}
+function evaluateAllDiscards(){
+    const full=getFullHand();if(full.length!==fullHandMax())return[];
+    const results=[],checked=new Set();
+    for(let i=0;i<full.length;i++){
+        const discard=full[i];if(checked.has(discard))continue;checked.add(discard);
+        const nh=[...full];nh.splice(i,1);
+        const shanten=calculateShanten(handToCounts(nh));const ukeire=countUkeire(nh);
+        const tenpaiInfo=shanten===0?getTenpaiInfo(nh):null;
+        results.push({discard,shanten,ukeire,tenpaiInfo});
+    }
+    return results;
+}
+function getBestDiscards(){
+    const r=evaluateAllDiscards();if(!r.length)return[];
+    const minS=Math.min(...r.map(x=>x.shanten));const c=r.filter(x=>x.shanten===minS);
+    const maxU=Math.max(...c.map(x=>x.ukeire));return c.filter(x=>x.ukeire===maxU).map(x=>x.discard);
+}
 
-function analyze(){const full=getFullHand();if(full.length!==fullHandMax()){setResult("手牌を"+handMax()+"枚選んでツモ牌を引いてください");return;}if(calculateShanten(handToCounts(full))===-1){checkAgari();return;}const results=evaluateAllDiscards();const bestTiles=getBestDiscards();let txt="【場風】"+baKaze+" 【自風】"+jiKaze;if(nakiMentsu.length>0)txt+=" 【鳴き】"+nakiMentsu.map(m=>({chi:'チー',pon:'ポン',kan:'カン'})[m.type]+"("+m.tiles[0]+")").join('・');txt+="\nおすすめ打牌："+bestTiles.join(" / ")+"\n\n";results.sort((a,b)=>a.shanten-b.shanten||b.ukeire-a.ukeire);results.forEach(r=>{txt+=(bestTiles.includes(r.discard)?"★":"　")+r.discard+"切り："+r.shanten+"シャンテン / 受け入れ"+r.ukeire+"枚";if(r.tenpaiInfo&&r.tenpaiInfo.length>0){txt+="\n　　待ち：";r.tenpaiInfo.forEach(w=>{const han=w.yaku.reduce((s,y)=>s+y.han,0);txt+="\n　　  "+w.tile+"（"+w.count+"枚）→"+(w.yaku.length>0?w.yaku.map(y=>y.name).join('・')+" ["+han+"翻]":"役なし");});}txt+="\n";});txt+="\n"+generateExplanation(results,bestTiles,null);setResult(txt);}
+// ===================================================
+// 解析ボタン
+// ===================================================
+function analyze(){
+    const full=getFullHand();
+    if(full.length!==fullHandMax()){setResult("手牌を"+handMax()+"枚選んでツモ牌を引いてください");return;}
+    if(calculateShanten(handToCounts(full))===-1){checkAgari();return;}
+    const results=evaluateAllDiscards();const bestTiles=getBestDiscards();
+    let txt="【場風】"+baKaze+" 【自風】"+jiKaze;
+    if(nakiMentsu.length>0)txt+=" 【"+nakiMentsu.map(m=>NAKI_DEF[m.type].label+'('+m.tiles[0]+')').join('・')+"】";
+    if(!isMenzen())txt+=" ※門前崩れ";
+    txt+="\nおすすめ打牌："+bestTiles.join(" / ")+"\n\n";
+    results.sort((a,b)=>a.shanten-b.shanten||b.ukeire-a.ukeire);
+    results.forEach(r=>{
+        txt+=(bestTiles.includes(r.discard)?"★":"　")+r.discard+"切り："+r.shanten+"シャンテン / 受け入れ"+r.ukeire+"枚";
+        if(r.tenpaiInfo&&r.tenpaiInfo.length>0){txt+="\n　　待ち：";r.tenpaiInfo.forEach(w=>{const han=w.yaku.reduce((s,y)=>s+y.han,0);txt+="\n　　  "+w.tile+"（"+w.count+"枚）→"+(w.yaku.length>0?w.yaku.map(y=>y.name).join('・')+" ["+han+"翻]":"役なし");});}
+        txt+="\n";
+    });
+    txt+="\n"+generateExplanation(results,bestTiles,null);
+    setResult(txt);
+}
 
-function selectDiscard(selectedTile){const full=getFullHand();if(full.length!==fullHandMax())return;history={hand:[...hand],tsumoTile,nakiMentsu:[...nakiMentsu]};const bestTiles=getBestDiscards();const isCorrect=bestTiles.includes(selectedTile);total++;if(isCorrect)correct++;const results=evaluateAllDiscards();const selRes=results.find(r=>r.discard===selectedTile);const bestRes=results.find(r=>r.discard===bestTiles[0]);let txt=isCorrect?"正解！「"+selectedTile+"」切りは最善手です。\n"+(bestTiles.length>1?"（同率："+bestTiles.join(" / ")+"）\n":""):"不一致！あなた："+selectedTile+" / AI最善手："+bestTiles.join(" / ")+"\n";txt+="\nあなたの打牌後："+selRes.shanten+"シャンテン / 受け入れ"+selRes.ukeire+"枚\n";if(!isCorrect)txt+="AI打牌後："+bestRes.shanten+"シャンテン / 受け入れ"+bestRes.ukeire+"枚\n";if(selRes.tenpaiInfo&&selRes.tenpaiInfo.length>0){txt+="\nテンパイの待ち牌と役：";selRes.tenpaiInfo.forEach(w=>{const han=w.yaku.reduce((s,y)=>s+y.han,0);txt+="\n  "+w.tile+"（"+w.count+"枚）→"+(w.yaku.length>0?w.yaku.map(y=>y.name).join('・')+" ["+han+"翻]":"役なし");});}txt+="\n\n"+generateExplanation(results,bestTiles,selectedTile);txt+="\n正解率："+correct+" / "+total;setResult(txt);if(tsumoTile){hand=[...hand,tsumoTile];hand=sortHand(hand);tsumoTile=null;}const idx=hand.indexOf(selectedTile);if(idx!==-1)hand.splice(idx,1);renderHand();updateActionButtons();}
+// ===================================================
+// 打牌選択
+// ===================================================
+function selectDiscard(selectedTile){
+    const full=getFullHand();if(full.length!==fullHandMax())return;
+    history={hand:[...hand],tsumoTile,nakiMentsu:[...nakiMentsu]};
+    const bestTiles=getBestDiscards();const isCorrect=bestTiles.includes(selectedTile);
+    total++;if(isCorrect)correct++;
+    const results=evaluateAllDiscards();
+    const selRes=results.find(r=>r.discard===selectedTile);const bestRes=results.find(r=>r.discard===bestTiles[0]);
+    let txt=isCorrect
+        ?"正解！「"+selectedTile+"」切りは最善手です。\n"+(bestTiles.length>1?"（同率："+bestTiles.join(" / ")+"）\n":"")
+        :"不一致！あなた："+selectedTile+" / AI最善手："+bestTiles.join(" / ")+"\n";
+    txt+="\nあなたの打牌後："+selRes.shanten+"シャンテン / 受け入れ"+selRes.ukeire+"枚\n";
+    if(!isCorrect)txt+="AI打牌後："+bestRes.shanten+"シャンテン / 受け入れ"+bestRes.ukeire+"枚\n";
+    if(selRes.tenpaiInfo&&selRes.tenpaiInfo.length>0){txt+="\nテンパイの待ち牌と役：";selRes.tenpaiInfo.forEach(w=>{const han=w.yaku.reduce((s,y)=>s+y.han,0);txt+="\n  "+w.tile+"（"+w.count+"枚）→"+(w.yaku.length>0?w.yaku.map(y=>y.name).join('・')+" ["+han+"翻]":"役なし");});}
+    txt+="\n\n"+generateExplanation(results,bestTiles,selectedTile);
+    txt+="\n正解率："+correct+" / "+total;
+    setResult(txt);
+    if(tsumoTile){hand=[...hand,tsumoTile];hand=sortHand(hand);tsumoTile=null;}
+    const idx=hand.indexOf(selectedTile);if(idx!==-1)hand.splice(idx,1);
+    renderHand();updateActionButtons();
+}
 
-function generateRandomHand(){kitaNukiCount=0;tsumoTile=null;nakiMentsu=[];history=null;tsumoSelectMode=false;document.getElementById("tsumoSelectArea").style.display='none';document.getElementById("nakiSelectArea").style.display='none';const baList=['東','南'];const jiList=gameMode==='3'?['東','南','西']:['東','南','西','北'];setBaKaze(baList[Math.floor(Math.random()*baList.length)]);setJiKaze(jiList[Math.floor(Math.random()*jiList.length)]);Object.keys(situation).forEach(k=>situation[k]=false);const ids={riichi:'btnRiichi',driichi:'btnDriichi',tsumo:'btnTsumo',haitei:'btnHaitei',rinshan:'btnRinshan',chankan:'btnChankan',tenchi:'btnTenchi'};Object.keys(ids).forEach(k=>document.getElementById(ids[k]).classList.remove('active'));const wall=buildWall();wall.sort(()=>Math.random()-0.5);hand=sortHand(wall.slice(0,13));setResult("");renderHand();renderNaki();updateActionButtons();const btn=document.getElementById("kitaNukiBtn");if(btn)btn.innerText="北を抜く（+0枚）";}
+// ===================================================
+// ランダム配牌
+// ===================================================
+function generateRandomHand(){
+    kitaNukiCount=0;tsumoTile=null;nakiMentsu=[];history=null;tsumoSelectMode=false;
+    document.getElementById("tsumoSelectArea").style.display='none';
+    document.getElementById("nakiSelectArea").style.display='none';
+    const baList=['東','南'];const jiList=gameMode==='3'?['東','南','西']:['東','南','西','北'];
+    setBaKaze(baList[Math.floor(Math.random()*baList.length)]);
+    setJiKaze(jiList[Math.floor(Math.random()*jiList.length)]);
+    Object.keys(situation).forEach(k=>situation[k]=false);
+    const ids={riichi:'btnRiichi',driichi:'btnDriichi',tsumo:'btnTsumo',haitei:'btnHaitei',rinshan:'btnRinshan',chankan:'btnChankan',tenchi:'btnTenchi'};
+    Object.keys(ids).forEach(k=>document.getElementById(ids[k]).classList.remove('active'));
+    const wall=buildWall();wall.sort(()=>Math.random()-0.5);
+    hand=sortHand(wall.slice(0,13));
+    setResult("");renderHand();renderNaki();updateActionButtons();
+    const btn=document.getElementById("kitaNukiBtn");if(btn)btn.innerText="北を抜く（+0枚）";
+}
 
-function setResult(txt){const el=document.getElementById("result");if(txt===""){el.innerHTML="";return;}el.innerHTML='<pre style="white-space:pre-wrap;text-align:left;display:inline-block;max-width:720px;">'+txt+'</pre>';}
+function setResult(txt){
+    const el=document.getElementById("result");
+    if(txt===""){el.innerHTML="";return;}
+    el.innerHTML='<pre style="white-space:pre-wrap;text-align:left;display:inline-block;max-width:720px;">'+txt+'</pre>';
+}
 
 createTiles();
 createDoraTiles();
