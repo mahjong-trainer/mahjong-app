@@ -276,7 +276,13 @@ function createTiles(){
 }
 function createDoraTiles(){
     document.getElementById("doraTiles").innerHTML="";
-    getAvailableTiles().filter(t=>!isRedTile(t)).forEach(name=>{
+    const allUsed=[...hand,...nakiMentsu.flatMap(m=>m.tiles)];
+    const usedCounts={};
+    allUsed.forEach(t=>{const n=normalizeTile(t);usedCounts[n]=(usedCounts[n]||0)+1;});
+    getAvailableTiles().forEach(name=>{
+        const norm=normalizeTile(name);
+        if(!isRedTile(name)&&(usedCounts[norm]||0)>=4)return;
+        if(isRedTile(name)&&allUsed.includes(name))return;
         const tile=makeTileEl(name,()=>{doraIndicator=name;const dora=getDoraFromIndicator(name);document.getElementById("doraDisplay").innerText=name+(dora?"（ドラ："+dora+"）":"");document.querySelectorAll("#doraTiles .tile").forEach(t=>t.classList.remove("selected"));tile.classList.add("selected");});
         document.getElementById("doraTiles").appendChild(tile);
     });
@@ -326,16 +332,50 @@ function selectNakiTile(name){
         const count=def.tileCount;
         tiles=Array(count).fill(normalizeTile(name));
     }
-    // 枚数チェック：手牌＋既存鳴き面子＋今回の鳴き牌が4枚以内か確認
+    // 枚数チェック
     const allUsed=[...hand,...nakiMentsu.flatMap(m=>m.tiles),...tiles];
     const countMap={};
     allUsed.forEach(t=>{const n=normalizeTile(t);countMap[n]=(countMap[n]||0)+1;});
     const over=Object.entries(countMap).find(([k,v])=>v>4);
     if(over){alert(over[0]+'が合計'+over[1]+'枚になります。4枚を超えるため登録できません。');return;}
-    nakiMentsu.push({type:nakiMode,tiles});
+
+    // 5が含まれる場合、赤ドラかどうか確認
+    const fivesSuits={"萬":"5赤萬","筒":"5赤筒","索":"5赤索"};
+    const allHandUsed=[...hand,...nakiMentsu.flatMap(m=>m.tiles)];
+    let finalTiles=[...tiles];
+
+    for(let i=0;i<finalTiles.length;i++){
+        const t=finalTiles[i];
+        const suit=getSuit(t);
+        if(getNum(t)===5&&suit){
+            const redName=fivesSuits[suit];
+            // 赤ドラが既に使われていない場合のみ選択肢を出す
+            if(!allHandUsed.includes(redName)){
+                const useRed=confirm(t+"を鳴きますが、これは赤ドラ（"+redName+"）ですか？
+OK→赤ドラ / キャンセル→通常の5");
+                if(useRed) finalTiles[i]=redName;
+            }
+        }
+    }
+
+    // カンで5が4枚の場合、赤ドラ1枚を含めるか確認
+    if((nakiMode==='ankan'||nakiMode==='daiminkan'||nakiMode==='kakaon')&&getNum(name)===5&&isSuited(name)){
+        const suit=getSuit(name);
+        const redName=fivesSuits[suit];
+        if(!allHandUsed.includes(redName)){
+            const useRed=confirm("カンの4枚の中に赤ドラ（"+redName+"）を含めますか？
+OK→含める / キャンセル→含めない");
+            if(useRed){
+                // 1枚だけ赤ドラに置き換え
+                finalTiles=finalTiles.map((t,i)=>i===0?redName:normalizeTile(t));
+            }
+        }
+    }
+
+    nakiMentsu.push({type:nakiMode,tiles:finalTiles});
     document.getElementById("nakiSelectArea").style.display='none';
     nakiSelected=[];
-    renderNaki();updateActionButtons();renderHand();
+    renderNaki();updateActionButtons();renderHand();createDoraTiles();
 }
 
 function cancelNaki(){nakiMode=null;nakiSelected=[];document.getElementById("nakiSelectArea").style.display='none';}
